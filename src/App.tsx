@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Home, Info, BookOpen, Phone, FileText } from 'lucide-react';
+import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut } from 'lucide-react';
 import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/navigation/Navigation';
@@ -169,6 +169,11 @@ function App() {
                   </nav>
                 </div>
                 
+                {/* Authentication Section */}
+                <div className="border-t border-gray-200 pt-6">
+                  <AuthButtons onPageChange={setCurrentPage} onClose={() => setShowMobileMenu(false)} />
+                </div>
+                
                 <div className="mt-auto pt-6 border-t border-gray-200">
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4">
                     <p className="text-sm text-gray-700 mb-2">
@@ -194,5 +199,64 @@ function App() {
     </AuthProvider>
   );
 }
+
+// Authentication Buttons Component
+const AuthButtons: React.FC<{ onPageChange: (page: string) => void; onClose: () => void }> = ({ onPageChange, onClose }) => {
+  const { user, isAuthenticated, logout } = React.useContext(AuthProvider);
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      onClose();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleLogin = () => {
+    onPageChange('home');
+    onClose();
+    // The AuthModal will be shown from the Header component
+  };
+
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-500 mb-3">Account</h3>
+      {isAuthenticated && user ? (
+        <div className="space-y-3">
+          <div className="flex items-center space-x-3 px-4 py-3 bg-blue-50 rounded-xl">
+            <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold">
+              {user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)}
+            </div>
+            <div className="overflow-hidden">
+              <p className="font-medium text-gray-900 truncate">{user.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>{isLoggingOut ? 'Signing Out...' : 'Sign Out'}</span>
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleLogin}
+          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700"
+        >
+          <LogIn className="w-5 h-5" />
+          <span>Sign In</span>
+        </button>
+      )}
+    </div>
+  );
+};
 
 export default App;

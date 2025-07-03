@@ -33,6 +33,7 @@ function App() {
 
   // Handle showing auth modal
   const handleShowAuth = () => {
+    console.log('handleShowAuth called'); // Debug log
     setShowAuthModal(true);
     setShowMobileMenu(false);
   };
@@ -239,9 +240,8 @@ const AuthButtons: React.FC<{
   const handleLogin = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Sign in button clicked'); // Debug log
-    onShowAuth(); // Show the auth modal
-    onClose(); // Close the mobile menu
+    console.log('Sign in button clicked - calling onShowAuth'); // Debug log
+    onShowAuth(); // This should show the auth modal and close the mobile menu
   };
 
   return (

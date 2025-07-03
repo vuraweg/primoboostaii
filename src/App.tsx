@@ -8,6 +8,7 @@ import ResumeOptimizer from './components/ResumeOptimizer';
 import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
+import logoImage from '/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -79,14 +80,12 @@ function App() {
                     onClick={() => setCurrentPage('home')}
                     className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                   >
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                        <path d="M14 2v6h6"/>
-                        <path d="M16 13H8"/>
-                        <path d="M16 17H8"/>
-                        <path d="M10 9H8"/>
-                      </svg>
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
+                      <img 
+                        src={logoImage} 
+                        alt="PrimoBoost AI Logo" 
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <h1 className="text-xl font-bold text-gray-900">PrimoBoost AI</h1>
@@ -123,14 +122,12 @@ function App() {
               <div className="flex flex-col space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                        <path d="M14 2v6h6"/>
-                        <path d="M16 13H8"/>
-                        <path d="M16 17H8"/>
-                        <path d="M10 9H8"/>
-                      </svg>
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
+                      <img 
+                        src={logoImage} 
+                        alt="PrimoBoost AI Logo" 
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <h1 className="text-xl font-bold text-gray-900">PrimoBoost AI</h1>
                   </div>
@@ -203,7 +200,7 @@ function App() {
 // Authentication Buttons Component
 const AuthButtons: React.FC<{ onPageChange: (page: string) => void; onClose: () => void }> = ({ onPageChange, onClose }) => {
   const { user, isAuthenticated, logout } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

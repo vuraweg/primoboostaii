@@ -39,6 +39,7 @@ const ResumeOptimizer: React.FC = () => {
   const [remainingOptimizations, setRemainingOptimizations] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
+  const [ipBlocked, setIpBlocked] = useState(false);
 
   // Check if we're on mobile
   useEffect(() => {
@@ -142,6 +143,20 @@ const ResumeOptimizer: React.FC = () => {
         setShowAuthModal(true);
         setLoading(false);
         return;
+      }
+
+      // Check for IP blocking (multiple account creation)
+      try {
+        const ipCheckResult = await paymentService.checkIpRestriction(user!.id);
+        if (ipCheckResult.blocked) {
+          setIpBlocked(true);
+          setError('Your account has been blocked due to multiple account creation from the same IP address');
+          setLoading(false);
+          return;
+        }
+      } catch (ipError) {
+        console.error('IP check error:', ipError);
+        // Continue with optimization even if IP check fails
       }
 
       const usageResult = await paymentService.useOptimization(user!.id);
@@ -333,6 +348,29 @@ const ResumeOptimizer: React.FC = () => {
     );
   };
 
+  // IP Blocked Error Message
+  if (ipBlocked) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-md">
+        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 text-center">
+          <div className="bg-red-100 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-red-800 mb-3">Account Blocked</h2>
+          <p className="text-red-700 mb-4">
+            Your account has been blocked due to multiple account creation from the same IP address.
+          </p>
+          <p className="text-red-600 text-sm mb-4">
+            This is a security measure to prevent abuse of our free trial and coupon system.
+          </p>
+          <p className="text-red-600 text-sm">
+            If you believe this is an error, please contact our support team.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8 max-w-7xl">
       {/* Subscription Status for Authenticated Users */}
@@ -369,8 +407,12 @@ const ResumeOptimizer: React.FC = () => {
       {/* Mobile-First Header */}
       <div className="text-center mb-6 sm:mb-8 lg:mb-12">
         <div className="flex flex-col items-center mb-4 sm:mb-6">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-3 sm:p-4 rounded-2xl mb-3 sm:mb-4 shadow-lg">
-            <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+          <div className="w-16 h-16 rounded-xl overflow-hidden mb-3 sm:mb-4 shadow-lg">
+            <img 
+              src={logoImage} 
+              alt="PrimoBoost AI Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
@@ -846,6 +888,12 @@ const ResumeOptimizer: React.FC = () => {
                     {error && (
                       <div className="mt-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl max-w-md mx-auto">
                         <p className="text-red-700 text-xs sm:text-sm font-medium">{error}</p>
+                        <button
+                          onClick={handleOptimize}
+                          className="mt-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg text-xs"
+                        >
+                          Try Again
+                        </button>
                       </div>
                     )}
                   </div>

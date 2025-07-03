@@ -226,6 +226,43 @@ class PaymentService {
     }
   }
 
+  // Check IP restriction for multiple account creation
+  async checkIpRestriction(userId: string): Promise<{ blocked: boolean; reason?: string }> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('Supabase URL not configured');
+      }
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/check-ip-restriction`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to check IP restriction');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error checking IP restriction:', error);
+      // Default to not blocked if there's an error checking
+      return { blocked: false };
+    }
+  }
+
   // Create free subscription (for 100% discount coupons)
   async createFreeSubscription(
     planId: string,

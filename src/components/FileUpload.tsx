@@ -53,7 +53,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
     await processFile(file);
   };
 
-  const clearFile = () => {
+  const clearFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setUploadedFile(null);
     onFileUpload('');
     if (fileInputRef.current) {
@@ -65,7 +66,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
     <div className="space-y-4">
       {/* Upload Area */}
       <div
-        className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${
+        className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
           isDragging
             ? 'border-blue-400 bg-blue-50 scale-105'
             : uploadedFile
@@ -75,7 +76,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => !isUploading && fileInputRef.current?.click()}
+        onClick={() => !isUploading && !uploadedFile && fileInputRef.current?.click()}
       >
         {isUploading ? (
           <div className="flex flex-col items-center">
@@ -91,10 +92,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
             <p className="text-lg font-medium text-green-900 mb-2">File uploaded successfully!</p>
             <p className="text-sm text-green-700 mb-4">{uploadedFile}</p>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                clearFile();
-              }}
+              onClick={clearFile}
               className="flex items-center space-x-2 text-red-600 hover:text-red-700 font-medium text-sm transition-colors"
             >
               <X className="w-4 h-4" />

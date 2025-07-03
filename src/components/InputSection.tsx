@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Briefcase, AlertCircle } from 'lucide-react';
+import { FileText, Briefcase, AlertCircle, X } from 'lucide-react';
 
 interface InputSectionProps {
   resumeText: string;

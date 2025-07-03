@@ -8,11 +8,13 @@ import ResumeOptimizer from './components/ResumeOptimizer';
 import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
+import { AuthModal } from './components/auth/AuthModal';
 import logoImage from '/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Handle mobile menu toggle
   const handleMobileMenuToggle = () => {
@@ -168,7 +170,11 @@ function App() {
                 
                 {/* Authentication Section */}
                 <div className="border-t border-gray-200 pt-6">
-                  <AuthButtons onPageChange={setCurrentPage} onClose={() => setShowMobileMenu(false)} />
+                  <AuthButtons 
+                    onPageChange={setCurrentPage} 
+                    onClose={() => setShowMobileMenu(false)}
+                    onShowAuth={() => setShowAuthModal(true)}
+                  />
                 </div>
                 
                 <div className="mt-auto pt-6 border-t border-gray-200">
@@ -192,13 +198,23 @@ function App() {
             </div>
           </div>
         )}
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
       </div>
     </AuthProvider>
   );
 }
 
 // Authentication Buttons Component
-const AuthButtons: React.FC<{ onPageChange: (page: string) => void; onClose: () => void }> = ({ onPageChange, onClose }) => {
+const AuthButtons: React.FC<{ 
+  onPageChange: (page: string) => void; 
+  onClose: () => void;
+  onShowAuth: () => void;
+}> = ({ onPageChange, onClose, onShowAuth }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -215,9 +231,8 @@ const AuthButtons: React.FC<{ onPageChange: (page: string) => void; onClose: () 
   };
 
   const handleLogin = () => {
-    onPageChange('home');
-    onClose();
-    // The AuthModal will be shown from the Header component
+    onShowAuth(); // Show the auth modal
+    onClose(); // Close the mobile menu
   };
 
   return (

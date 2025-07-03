@@ -1,16 +1,16 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 interface IpRestrictionRequest {
   userId: string
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -36,8 +36,9 @@ serve(async (req) => {
     }
 
     // Get client IP address
-    const clientIp = req.headers.get('x-forwarded-for') || 
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                     req.headers.get('x-real-ip') || 
+                    req.headers.get('cf-connecting-ip') ||
                     'unknown'
 
     // Check for suspicious activity from this IP
@@ -49,7 +50,18 @@ serve(async (req) => {
 
     if (ipCheckError) {
       console.error('Error checking IP usage:', ipCheckError)
-      throw new Error('Failed to check IP restriction')
+      // Don't throw error, just log and continue with no restriction
+      return new Response(
+        JSON.stringify({
+          blocked: false,
+          reason: null,
+          accountCount: 0
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
     }
 
     // Check if this IP has created multiple accounts (more than 3)
@@ -65,17 +77,22 @@ serve(async (req) => {
 
     // If blocked, log the security event
     if (isBlocked) {
-      await supabase.from('device_activity_logs').insert({
-        user_id: userId,
-        activity_type: 'security_violation',
-        activity_details: {
-          reason: 'multiple_accounts_from_ip',
+      try {
+        await supabase.from('device_activity_logs').insert({
+          user_id: userId,
+          activity_type: 'security_violation',
+          activity_details: {
+            reason: 'multiple_accounts_from_ip',
+            ip_address: clientIp,
+            account_count: uniqueUserIds.size
+          },
           ip_address: clientIp,
-          account_count: uniqueUserIds.size
-        },
-        ip_address: clientIp,
-        risk_score: 90
-      })
+          risk_score: 90
+        })
+      } catch (logError) {
+        console.error('Error logging security event:', logError)
+        // Don't fail the request if logging fails
+      }
     }
 
     return new Response(
@@ -99,7 +116,7 @@ serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 500,
       },
     )
   }

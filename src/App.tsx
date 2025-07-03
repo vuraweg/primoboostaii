@@ -31,6 +31,12 @@ function App() {
     }
   };
 
+  // Handle showing auth modal
+  const handleShowAuth = () => {
+    setShowAuthModal(true);
+    setShowMobileMenu(false);
+  };
+
   // Close mobile menu on window resize
   useEffect(() => {
     const handleResize = () => {
@@ -173,7 +179,7 @@ function App() {
                   <AuthButtons 
                     onPageChange={setCurrentPage} 
                     onClose={() => setShowMobileMenu(false)}
-                    onShowAuth={() => setShowAuthModal(true)}
+                    onShowAuth={handleShowAuth}
                   />
                 </div>
                 
@@ -230,7 +236,10 @@ const AuthButtons: React.FC<{
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Sign in button clicked'); // Debug log
     onShowAuth(); // Show the auth modal
     onClose(); // Close the mobile menu
   };
@@ -262,6 +271,7 @@ const AuthButtons: React.FC<{
         <button
           onClick={handleLogin}
           className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700"
+          type="button"
         >
           <LogIn className="w-5 h-5" />
           <span>Sign In</span>

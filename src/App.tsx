@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut } from 'lucide-react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/navigation/Navigation';
 import { MobileNavBar } from './components/navigation/MobileNavBar';
@@ -202,7 +202,7 @@ function App() {
 
 // Authentication Buttons Component
 const AuthButtons: React.FC<{ onPageChange: (page: string) => void; onClose: () => void }> = ({ onPageChange, onClose }) => {
-  const { user, isAuthenticated, logout } = React.useContext(AuthProvider);
+  const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const handleLogout = async () => {

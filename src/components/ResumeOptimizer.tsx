@@ -17,6 +17,9 @@ import { ResumeData, UserType, MatchScore } from '../types/resume';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Sparkles, Linkedin, Github, ArrowLeft, CheckCircle, Upload, Target, ChevronRight, BarChart3, ArrowDown, LogIn, User, Crown, AlertTriangle, Users, Briefcase, Shield, Download, Share2 } from 'lucide-react';
 
+// Import the logo image
+import logoImage from '/public/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
+
 const ResumeOptimizer: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [resumeText, setResumeText] = useState('');

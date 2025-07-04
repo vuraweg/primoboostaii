@@ -34,11 +34,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
 import { AuthModal } from './auth/AuthModal';
 
+interface ResumeOptimizerProps {
+  onPageChange?: (page: string) => void;
+}
+
 type ViewMode = 'analysis' | 'upload' | 'input' | 'result';
 
-const ResumeOptimizer: React.FC = () => {
+const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
   const { user, isAuthenticated } = useAuth();
-  const [currentView, setCurrentView] = useState<ViewMode>('upload');
+  const [currentView, setCurrentView] = useState<ViewMode | 'mode-selection'>('mode-selection');
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -114,7 +118,7 @@ const ResumeOptimizer: React.FC = () => {
   };
 
   const handleStartOver = () => {
-    setCurrentView('upload');
+    setCurrentView('mode-selection');
     setResumeText('');
     setJobDescription('');
     setLinkedinUrl('');
@@ -132,6 +136,14 @@ const ResumeOptimizer: React.FC = () => {
     handleOptimize();
   };
 
+  const handleModeSelection = (mode: 'optimizer' | 'ats-builder') => {
+    if (mode === 'optimizer') {
+      setCurrentView('upload');
+    } else if (mode === 'ats-builder' && onPageChange) {
+      onPageChange('ats-builder');
+    }
+  };
+
   if (currentView === 'analysis') {
     return (
       <ResumeAnalysis 
@@ -147,18 +159,24 @@ const ResumeOptimizer: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <Sparkles className="w-10 h-10 text-white" />
+            {currentView === 'mode-selection' ? (
+              <Zap className="w-10 h-10 text-white" />
+            ) : (
+              <Sparkles className="w-10 h-10 text-white" />
+            )}
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            AI Resume Optimizer
+            {currentView === 'mode-selection' ? 'Resume Enhancement Tools' : 'AI Resume Optimizer'}
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Transform your resume with AI-powered optimization. Get ATS-friendly formatting, keyword enhancement, and professional polish.
+            {currentView === 'mode-selection' 
+              ? 'Choose the right tool to enhance your resume and boost your job search success'
+              : 'Transform your resume with AI-powered optimization. Get ATS-friendly formatting, keyword enhancement, and professional polish.'}
           </p>
         </div>
 
         {/* Navigation Buttons */}
-        {currentView !== 'upload' && (
+        {currentView !== 'upload' && currentView !== 'mode-selection' && (
           <div className="flex justify-center mb-6">
             <button
               onClick={currentView === 'input' && analysisData ? handleBackToAnalysis : handleStartOver}
@@ -171,13 +189,95 @@ const ResumeOptimizer: React.FC = () => {
         )}
 
         {/* Subscription Status for Authenticated Users */}
-        {isAuthenticated && currentView !== 'result' && (
+        {isAuthenticated && currentView !== 'result' && currentView !== 'mode-selection' && (
           <div className="mb-8">
             <SubscriptionStatus onUpgrade={() => setShowSubscriptionPlans(true)} />
           </div>
         )}
 
         {/* Main Content */}
+        {currentView === 'mode-selection' && (
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* AI Resume Optimizer */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-3"></div>
+                <div className="p-6">
+                  <div className="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">AI Resume Optimizer</h3>
+                  <p className="text-gray-600 mb-6">
+                    Transform your existing resume with AI-powered optimization tailored to specific job descriptions. Get keyword enhancement, professional formatting, and content improvements.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Job-specific keyword optimization</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Professional content enhancement</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Quantifiable achievements</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Before & after score comparison</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleModeSelection('optimizer')}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    Use AI Optimizer
+                  </button>
+                </div>
+              </div>
+              
+              {/* ATS Resume Builder */}
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <div className="bg-gradient-to-r from-green-500 to-blue-600 h-3"></div>
+                <div className="p-6">
+                  <div className="bg-green-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Target className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 text-center mb-4">ATS Resume Builder</h3>
+                  <p className="text-gray-600 mb-6">
+                    Get detailed ATS compatibility analysis and build an optimized resume that passes through Applicant Tracking Systems with higher success rates.
+                  </p>
+                  <ul className="space-y-3 mb-6">
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">ATS compatibility score</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Section-by-section analysis</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">ATS-friendly formatting</span>
+                    </li>
+                    <li className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Missing section completion</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleModeSelection('ats-builder')}
+                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    Use ATS Builder
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {currentView === 'upload' && (
           <div className="max-w-4xl mx-auto">
             {/* Feature Selection */}

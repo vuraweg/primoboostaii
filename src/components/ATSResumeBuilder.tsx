@@ -29,6 +29,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
 import { analyzeResumeForATS } from '../services/atsAnalysisService';
 
+interface ATSResumeBuilderProps {
+  onBackToHome?: () => void;
+}
+
 interface ATSAnalysis {
   originalScore?: number;
   score: number; 
@@ -48,7 +52,7 @@ interface UserInputs {
   userType: UserType;
 }
 
-export const ATSResumeBuilder: React.FC = () => {
+export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome }) => {
   const { user, isAuthenticated } = useAuth();
   const [resumeText, setResumeText] = useState('');
   const [userInputs, setUserInputs] = useState<UserInputs>({
@@ -406,8 +410,54 @@ export const ATSResumeBuilder: React.FC = () => {
                       {atsAnalysis.score >= 80 ? 'Excellent' :
                        atsAnalysis.score >= 60 ? 'Good' : 'Needs Improvement'}
                     </div>
+                    
+                    {/* Score Explanation - Only show if score is below 90 */}
+                    {atsAnalysis.score < 90 ? (
+                      <div className="mt-4 bg-yellow-50 rounded-xl p-4 border border-yellow-200 text-left">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-yellow-800 mb-1">Why Your Resume Needs Optimization</h3>
+                            <p className="text-yellow-700 text-sm">
+                              Your resume scored {Math.round(atsAnalysis.score)}%, which means it may not pass through Applicant Tracking Systems effectively.
+                              {atsAnalysis.score < 70 ? ' This significantly reduces your chances of getting interviews.' : ' This could reduce your chances of getting interviews.'}
+                            </p>
+                            <div className="mt-2">
+                              <span className="text-xs font-medium text-yellow-800">Key issues to address:</span>
+                              <ul className="mt-1 text-xs text-yellow-700 space-y-1">
+                                {atsAnalysis.missingSections.length > 0 && (
+                                  <li>• Missing sections: {atsAnalysis.missingSections.join(', ')}</li>
+                                )}
+                                {atsAnalysis.keywordDensity < 5 && (
+                                  <li>• Low keyword density ({atsAnalysis.keywordDensity}%)</li>
+                                )}
+                                {atsAnalysis.formatCompliance < 80 && (
+                                  <li>• Poor ATS format compliance ({atsAnalysis.formatCompliance}%)</li>
+                                )}
+                                {atsAnalysis.sectionCompleteness < 80 && (
+                                  <li>• Incomplete sections ({atsAnalysis.sectionCompleteness}%)</li>
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 bg-green-50 rounded-xl p-4 border border-green-200 text-left">
+                        <div className="flex items-start space-x-2">
+                          <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-semibold text-green-800 mb-1">Your Resume Is ATS-Optimized</h3>
+                            <p className="text-green-700 text-sm">
+                              Congratulations! Your resume scored {Math.round(atsAnalysis.score)}%, which means it's already well-optimized for ATS systems. 
+                              While optimization isn't strictly necessary, you can still proceed to make minor improvements.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
+
                   {/* Score Explanation - Only show if score is below 90 */}
                   {atsAnalysis.score < 90 && (
                     <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
@@ -883,11 +933,17 @@ export const ATSResumeBuilder: React.FC = () => {
               {/* Start Over */}
               <div className="text-center mt-8">
                 <button
-                  onClick={resetBuilder}
+                  onClick={() => {
+                    if (onBackToHome) {
+                      onBackToHome();
+                    } else {
+                      resetBuilder();
+                    }
+                  }}
                   className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto shadow-md"
                 >
                   <RefreshCw className="w-5 h-5" />
-                  <span>Build Another Resume</span>
+                  <span>{onBackToHome ? 'Back to Home' : 'Build Another Resume'}</span>
                 </button>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { Navigation } from './components/navigation/Navigation';
 import { MobileNavBar } from './components/navigation/MobileNavBar';
 import ResumeOptimizer from './components/ResumeOptimizer';
 import { ATSResumeBuilder } from './components/ATSResumeBuilder';
+import { ATSResumeAnalysis } from './components/ATSResumeAnalysis';
 import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
@@ -61,6 +62,8 @@ function App() {
         return <Tutorials />;
       case 'ats-builder':
         return <ATSResumeBuilder />;
+      case 'ats-analysis':
+        return <ATSResumeAnalysis onBack={() => setCurrentPage('home')} />;
       case 'home':
       default:
         return (
@@ -74,8 +77,8 @@ function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen pb-16 md:pb-0">
-        {(currentPage === 'home' || currentPage === 'ats-builder') ? (
-          // For home and ATS builder pages, show the header with navigation integrated
+        {(currentPage === 'home' || currentPage === 'ats-builder' || currentPage === 'ats-analysis') ? (
+          // For home and ATS pages, show the header with navigation integrated
           <>
             <Header onMobileMenuToggle={handleMobileMenuToggle} showMobileMenu={showMobileMenu}>
               <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
@@ -156,6 +159,7 @@ function App() {
                     {[
                       { id: 'home', label: 'Resume Optimizer', icon: <Home className="w-5 h-5" /> },
                       { id: 'ats-builder', label: 'ATS Resume Builder', icon: <Target className="w-5 h-5" /> },
+                      { id: 'ats-analysis', label: 'ATS Analysis', icon: <FileText className="w-5 h-5" /> },
                       { id: 'about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                       { id: 'tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                       { id: 'contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> }

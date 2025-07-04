@@ -15,7 +15,6 @@ import {
   CheckCircle,
   AlertTriangle,
   ArrowLeft,
-  ArrowRight,
   RefreshCw,
   Crown,
   Lock
@@ -480,9 +479,9 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
                   
                   <button
                     onClick={handleOptimize}
-                    disabled={!resumeText.trim() || !jobDescription.trim() || isOptimizing || !isAuthenticated}
+                    disabled={!resumeText.trim() || !jobDescription.trim() || isOptimizing}
                     className={`w-full max-w-md mx-auto py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-3 ${
-                      !resumeText.trim() || !jobDescription.trim() || isOptimizing || !isAuthenticated
+                      !resumeText.trim() || !jobDescription.trim() || isOptimizing
                         ? 'bg-gray-400 cursor-not-allowed text-white'
                         : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105'
                     }`}
@@ -500,30 +499,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
                       </>
                     )}
                   </button>
-                  
-                  {/* Job Tracker Promotion */}
-                  {isAuthenticated && (
-                    <div className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-purple-100 p-2 rounded-lg">
-                            <Briefcase className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <div className="text-left">
-                            <h4 className="font-semibold text-gray-900">Track Your Job Applications</h4>
-                            <p className="text-sm text-gray-600">Keep all your applications organized in one place</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => onPageChange && onPageChange('job-tracker')}
-                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center space-x-1"
-                        >
-                          <span>Open Tracker</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

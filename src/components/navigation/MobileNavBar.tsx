@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Info, BookOpen, Menu, Target, Briefcase } from 'lucide-react';
+import { Home, Info, BookOpen, Menu, Target } from 'lucide-react';
 
 interface MobileNavBarProps {
   currentPage: string;
@@ -10,7 +10,6 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ currentPage, onPageC
   const navItems = [
     { id: 'home', label: 'Optimizer', icon: <Home className="w-5 h-5" /> },
     { id: 'ats-builder', label: 'ATS Builder', icon: <Target className="w-5 h-5" /> },
-    { id: 'job-tracker', label: 'Jobs', icon: <Briefcase className="w-5 h-5" /> },
     { id: 'about', label: 'About', icon: <Info className="w-5 h-5" /> },
     { id: 'menu', label: 'Menu', icon: <Menu className="w-5 h-5" /> }
   ];

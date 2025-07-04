@@ -438,6 +438,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                             </div>
                           </div>
                         </div>
+                      </div>
                     )}
                     
                     {/* High Score Message - Only show if score is 90 or above */}

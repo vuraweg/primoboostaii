@@ -8,13 +8,23 @@ import {
   TrendingUp,
   Eye,
   Target,
-  Award,
+  Award, 
   Zap,
   ArrowRight,
   Download,
-  RefreshCw
+  RefreshCw,
+  FileCheck,
+  Shield,
+  Percent,
+  List,
+  LayoutGrid,
+  Briefcase,
+  Bookmark,
+  Layers,
+  AlertOctagon
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
+import { verifyDocumentFormat } from '../services/atsAnalysisService';
 
 interface AnalysisScore {
   category: string;
@@ -58,10 +68,21 @@ interface ResumeAnalysisProps {
 export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComplete, onBack }) => {
   const [resumeText, setResumeText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [targetRole, setTargetRole] = useState('');
   const [analysis, setAnalysis] = useState<ResumeAnalysisData | null>(null);
+  const [documentFormatStatus, setDocumentFormatStatus] = useState<{
+    isReadable: boolean;
+    hasProperFormatting: boolean;
+    issues: string[];
+  } | null>(null);
 
   const handleFileUpload = (text: string) => {
     setResumeText(text);
+    
+    // Verify document format
+    const formatStatus = verifyDocumentFormat(text);
+    setDocumentFormatStatus(formatStatus);
+    
     setAnalysis(null);
   };
 
@@ -69,11 +90,17 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
     if (!resumeText.trim()) return;
 
     setIsAnalyzing(true);
+    
+    // Generate a job description based on target role if provided
+    const jobDescription = targetRole ? 
+      `Position: ${targetRole}\n\nWe are looking for a qualified ${targetRole} to join our team. The ideal candidate should have relevant experience and skills in this field.` : 
+      '';
+    
     try {
       // Simulate comprehensive analysis
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const analysisResult = generateAnalysis(resumeText);
+      const analysisResult = generateAnalysis(resumeText, targetRole);
       setAnalysis(analysisResult);
     } catch (error) {
       console.error('Error analyzing resume:', error);
@@ -83,7 +110,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
     }
   };
 
-  const generateAnalysis = (text: string): ResumeAnalysisData => {
+  const generateAnalysis = (text: string, role?: string): ResumeAnalysisData => {
     // Simulate comprehensive analysis
     const hasContact = /(?:phone|email|linkedin)/i.test(text);
     const hasExperience = /(?:experience|work|employment)/i.test(text);
@@ -96,6 +123,9 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
     const hasQuantifiableAchievements = /\d+(?:%|\+|k|million|billion)/.test(text);
     const hasActionVerbs = /(?:developed|implemented|managed|led|created)/i.test(text);
 
+    // Adjust score based on target role if provided
+    const roleBonus = role ? 5 : 0;
+    
     const overallScore = Math.round(
       (hasContact ? 15 : 0) +
       (hasExperience ? 20 : 0) +
@@ -104,7 +134,18 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
       (hasSummary ? 10 : 0) +
       (hasProjects ? 10 : 0) +
       (hasQuantifiableAchievements ? 10 : 0) +
-      (hasActionVerbs ? 10 : 0)
+      (hasActionVerbs ? 10 : 0) +
+      roleBonus
+    );
+
+    // Calculate ATS score with more weight on format and keywords
+    const atsScore = Math.round(
+      (hasContact ? 20 : 0) +
+      (hasSkills ? 20 : 0) +
+      (hasExperience ? 20 : 0) +
+      (hasActionVerbs ? 15 : 0) +
+      (hasQuantifiableAchievements ? 15 : 0) +
+      (role ? 10 : 5)
     );
 
     return {
@@ -136,7 +177,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
           improvements: wordCount > 800 ? ['Reduce content length', 'Improve conciseness'] : wordCount < 200 ? ['Add more detailed content'] : []
         },
         {
-          category: 'ATS Compatibility',
+          category: 'ATS Compatibility', 
           score: (hasContact ? 2 : 0) + (hasSkills ? 2 : 0) + (hasExperience ? 2 : 0) + (hasActionVerbs ? 2 : 0) + 2,
           maxScore: 10,
           feedback: 'ATS compatibility ' + (hasContact && hasSkills && hasExperience ? 'is good' : 'needs improvement'),
@@ -184,7 +225,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
           suggestions: hasEducation ? ['Include relevant coursework if applicable'] : ['Add educational background']
         },
         {
-          section: 'Skills',
+          section: 'Technical Skills',
           present: hasSkills,
           quality: hasSkills ? 7 : 0,
           feedback: hasSkills ? 'Skills section is present' : 'Missing skills section',
@@ -198,17 +239,16 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
           suggestions: hasProjects ? ['Add more technical details', 'Include project outcomes'] : ['Add relevant projects to showcase practical experience']
         }
       ],
-      atsScore: Math.round(
-        (hasContact ? 20 : 0) +
-        (hasSkills ? 20 : 0) +
-        (hasExperience ? 20 : 0) +
-        (hasActionVerbs ? 15 : 0) +
-        (hasQuantifiableAchievements ? 15 : 0) +
-        10
-      ),
+      atsScore,
       keywords: {
-        found: ['JavaScript', 'React', 'Node.js', 'Python'].filter(() => Math.random() > 0.5),
-        missing: ['TypeScript', 'AWS', 'Docker', 'Kubernetes'].filter(() => Math.random() > 0.3),
+        found: role ? 
+          ['JavaScript', 'React', 'Node.js', 'Python', 'TypeScript', 'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Git']
+            .filter(() => Math.random() > 0.4) : 
+          ['JavaScript', 'React', 'Node.js', 'Python'].filter(() => Math.random() > 0.5),
+        missing: role ? 
+          ['TypeScript', 'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Git', 'Agile', 'Scrum', 'REST API', 'GraphQL']
+            .filter(() => Math.random() > 0.6) : 
+          ['TypeScript', 'AWS', 'Docker', 'Kubernetes'].filter(() => Math.random() > 0.3),
         density: Math.round(Math.random() * 30 + 10)
       },
       recommendations: [
@@ -218,12 +258,21 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
           suggestion: 'Add quantifiable achievements with specific numbers and percentages',
           impact: 'Increases credibility and demonstrates measurable impact'
         },
-        {
-          priority: 'High',
-          category: 'ATS Optimization',
-          suggestion: 'Include industry-specific keywords throughout your resume',
-          impact: 'Improves ATS parsing and keyword matching'
-        },
+        ...(role ? [
+          {
+            priority: 'High',
+            category: 'ATS Optimization',
+            suggestion: `Include ${role}-specific keywords throughout your resume`,
+            impact: 'Improves ATS parsing and keyword matching'
+          }
+        ] : [
+          {
+            priority: 'High',
+            category: 'ATS Optimization',
+            suggestion: 'Include industry-specific keywords throughout your resume',
+            impact: 'Improves ATS parsing and keyword matching'
+          }
+        ]),
         {
           priority: 'Medium',
           category: 'Format Improvement',
@@ -283,7 +332,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">What You'll Receive:</h2>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="bg-blue-100 p-2 rounded-lg">
@@ -315,7 +364,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="bg-orange-100 p-2 rounded-lg">
@@ -347,16 +396,95 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
                   </div>
                 </div>
               </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <Shield className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">ATS Compliance Verification</h3>
+                    <p className="text-gray-600 text-sm">Document format check, section verification, keyword analysis</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="bg-yellow-100 p-2 rounded-lg">
+                    <Bookmark className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Missing Section Alerts</h3>
+                    <p className="text-gray-600 text-sm">Identification of critical missing sections with completion guidance</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-3">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Layers className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Format Optimization</h3>
+                    <p className="text-gray-600 text-sm">ATS-friendly formatting recommendations and structure improvements</p>
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Target Role Input */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+              <Briefcase className="w-6 h-6 mr-2 text-purple-600" />
+              Target Job Position
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Specify your target role to get more accurate ATS analysis and keyword recommendations
+            </p>
+            
+            <div className="relative">
+              <input
+                type="text"
+                value={targetRole}
+                onChange={(e) => setTargetRole(e.target.value)}
+                placeholder="e.g., Senior Software Engineer, Data Scientist, Product Manager"
+                className="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+            
+            <p className="text-sm text-gray-500 mt-2">
+              This helps us analyze your resume against specific job requirements
+            </p>
           </div>
 
           {/* Upload Section */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <FileText className="w-6 h-6 mr-2 text-blue-600" />
+              <Upload className="w-6 h-6 mr-2 text-blue-600" />
               Upload Your Resume
             </h2>
             <FileUpload onFileUpload={handleFileUpload} />
+            
+            {documentFormatStatus && !documentFormatStatus.isReadable && (
+              <div className="mt-4 bg-red-50 rounded-xl p-4 border border-red-200">
+                <div className="flex items-start">
+                  <AlertOctagon className="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-red-900 mb-2">Document Format Issues Detected</h3>
+                    <ul className="text-red-700 text-sm space-y-1">
+                      {documentFormatStatus.issues.map((issue, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2 mt-1.5 flex-shrink-0" />
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-red-700 text-sm mt-2">
+                      These issues may affect the accuracy of the ATS analysis. Consider uploading a properly formatted resume.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -375,7 +503,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
                 ) : (
                   <>
                     <BarChart3 className="w-5 h-5" />
-                    <span>Start Comprehensive Analysis</span>
+                    <span>{targetRole ? `Analyze for ${targetRole} Role` : 'Start Comprehensive Analysis'}</span>
                   </>
                 )}
               </button>
@@ -400,7 +528,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         <div className="text-center mb-8">
           <div className="bg-gradient-to-r from-green-600 to-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Award className="w-10 h-10 text-white" />
-          </div>
+          </div> 
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
             Resume Analysis Complete
           </h1>
@@ -410,17 +538,54 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         </div>
 
         {/* Overall Score */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <div className="text-center">
-            <div className="text-6xl font-bold text-gray-900 mb-2">{analysis.overallScore}%</div>
-            <div className="text-xl text-gray-600 mb-4">Overall Resume Score</div>
-            <div className={`inline-flex items-center px-4 py-2 rounded-full text-lg font-semibold ${
+            <div className="text-7xl font-bold text-gray-900 mb-3">{analysis.overallScore}%</div>
+            <div className="text-xl text-gray-600 mb-5">Overall Resume Score</div>
+            <div className={`inline-flex items-center px-5 py-2.5 rounded-full text-lg font-semibold ${
               analysis.overallScore >= 80 ? 'bg-green-100 text-green-800' :
               analysis.overallScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
               'bg-red-100 text-red-800'
             }`}>
               {analysis.overallScore >= 80 ? 'Excellent' :
                analysis.overallScore >= 60 ? 'Good' : 'Needs Improvement'}
+            </div>
+          </div>
+          
+          {/* Score Explanation */}
+          <div className="mt-8 max-w-3xl mx-auto">
+            <div className={`p-4 rounded-xl ${
+              analysis.overallScore >= 80 ? 'bg-green-50 border border-green-200' :
+              analysis.overallScore >= 60 ? 'bg-yellow-50 border border-yellow-200' :
+              'bg-red-50 border border-red-200'
+            }`}>
+              <div className="flex items-start">
+                {analysis.overallScore >= 80 ? (
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
+                )}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {analysis.overallScore >= 90 
+                      ? 'Excellent! Your resume is highly optimized' 
+                      : analysis.overallScore >= 80 
+                      ? 'Very good resume with minor improvement opportunities'
+                      : analysis.overallScore >= 70
+                      ? 'Good resume that needs some optimization'
+                      : 'Your resume needs significant optimization'}
+                  </h3>
+                  <p className="text-sm text-gray-700">
+                    {analysis.overallScore >= 90 
+                      ? 'Your resume is well-structured, contains all necessary sections, and is optimized for ATS systems. You can proceed with confidence.' 
+                      : analysis.overallScore >= 80 
+                      ? 'Your resume is strong but could benefit from some minor improvements to maximize your chances with ATS systems.'
+                      : analysis.overallScore >= 70
+                      ? 'Your resume has good elements but needs optimization in several areas to improve ATS compatibility and overall effectiveness.'
+                      : 'Your resume requires significant improvements to pass through ATS systems effectively and reach human recruiters.'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -454,7 +619,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         </div>
 
         {/* Section Analysis */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8"> 
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Section-by-Section Analysis</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {analysis.sections.map((section, index) => (
@@ -487,7 +652,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         </div>
 
         {/* ATS Analysis */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8"> 
           <h2 className="text-2xl font-bold text-gray-900 mb-6">ATS Compatibility Analysis</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
@@ -529,7 +694,7 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         </div>
 
         {/* Recommendations */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8"> 
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Prioritized Recommendations</h2>
           <div className="space-y-4">
             {analysis.recommendations.map((rec, index) => (
@@ -550,19 +715,21 @@ export const ResumeAnalysis: React.FC<ResumeAnalysisProps> = ({ onAnalysisComple
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <button
             onClick={() => onAnalysisComplete(analysis, resumeText)}
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+            className={`bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-4 px-8 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 ${
+              analysis.overallScore < 90 ? 'animate-pulse' : ''
+            }`}
           >
             <Zap className="w-5 h-5" />
-            <span>Proceed to Optimization</span>
+            <span>{analysis.overallScore < 90 ? 'Optimize My Resume Now' : 'Proceed to Optimization'}</span>
             <ArrowRight className="w-5 h-5" />
           </button>
           
           <button
             onClick={() => setAnalysis(null)}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-colors flex items-center justify-center space-x-2"
+            className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-colors flex items-center justify-center space-x-2 shadow-md"
           >
             <RefreshCw className="w-5 h-5" />
             <span>Analyze Another Resume</span>

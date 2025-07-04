@@ -184,6 +184,7 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
   );
 
   if (filteredMissingSections.includes('Contact Information')) {
+  }
   const filteredMissingSections = missingSections.filter(
     section => section !== 'Professional Summary' && section !== 'Summary' && section !== 'Objective'
   );

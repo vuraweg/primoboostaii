@@ -472,8 +472,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       section !== 'Professional Summary' && 
                       section !== 'Summary' && 
                       section !== 'Objective'
-                      section !== 'Summary' && 
-                      section !== 'Objective'
                     ).length > 0 && (
                       <div className="bg-red-50 rounded-xl p-6 border border-red-200">
                         <h3 className="text-lg font-semibold text-red-900 mb-3 flex items-center">
@@ -484,8 +482,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           {atsAnalysis.missingSections
                             .filter(section => 
                               section !== 'Professional Summary' && 
-                              section !== 'Summary' && 
-                              section !== 'Objective'
                               section !== 'Summary' && 
                               section !== 'Objective'
                             )

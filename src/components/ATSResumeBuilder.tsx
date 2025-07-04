@@ -92,8 +92,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       const analysis = await analyzeResumeForATS(resumeText, userInputs.targetRole);
       setAtsAnalysis(analysis);
       // Store the original score for comparison after optimization
-      analysis.originalScore = analysis.score;
-      
+      analysis.originalScore = analysis.score;      
       // Pre-fill form data based on missing sections
       const newFormData = { ...formData };
       if (analysis.missingSections.includes('Professional Summary')) {
@@ -112,8 +111,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
         newFormData.certifications = '';
       }
       setFormData(newFormData);
-      
-      setCurrentStep('inputs');
     } catch (error) {
       console.error('Error analyzing resume:', error);
       alert('Failed to analyze resume. Please try again.');
@@ -412,7 +409,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     </div>
                     
                     {/* Score Explanation - Only show if score is below 90 */}
-                    {atsAnalysis.score < 90 ? (
+                    {atsAnalysis.score < 90 && (
                       <div className="mt-4 bg-yellow-50 rounded-xl p-4 border border-yellow-200 text-left">
                         <div className="flex items-start space-x-2">
                           <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
@@ -441,7 +438,10 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                             </div>
                           </div>
                         </div>
-                      </div>
+                    )}
+                    
+                    {/* High Score Message - Only show if score is 90 or above */}
+                    {atsAnalysis.score >= 90 && (
                     ) : (
                       <div className="mt-4 bg-green-50 rounded-xl p-4 border border-green-200 text-left">
                         <div className="flex items-start space-x-2">
@@ -457,39 +457,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       </div>
                     )}
                   </div>
-
-                  {/* Score Explanation - Only show if score is below 90 */}
-                  {atsAnalysis.score < 90 && (
-                    <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                      <div className="flex items-start space-x-2">
-                        <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h3 className="font-semibold text-yellow-800 mb-1">Why Your Resume Needs Optimization</h3>
-                          <p className="text-yellow-700 text-sm">
-                            Your resume scored {Math.round(atsAnalysis.score)}%, which means it may not pass through Applicant Tracking Systems effectively.
-                            {atsAnalysis.score < 70 ? ' This significantly reduces your chances of getting interviews.' : ' This could reduce your chances of getting interviews.'}
-                          </p>
-                          <div className="mt-2">
-                            <span className="text-xs font-medium text-yellow-800">Key issues to address:</span>
-                            <ul className="mt-1 text-xs text-yellow-700 space-y-1">
-                              {atsAnalysis.missingSections.length > 0 && (
-                                <li>• Missing sections: {atsAnalysis.missingSections.join(', ')}</li>
-                              )}
-                              {atsAnalysis.keywordDensity < 5 && (
-                                <li>• Low keyword density ({atsAnalysis.keywordDensity}%)</li>
-                              )}
-                              {atsAnalysis.formatCompliance < 80 && (
-                                <li>• Poor ATS format compliance ({atsAnalysis.formatCompliance}%)</li>
-                              )}
-                              {atsAnalysis.sectionCompleteness < 80 && (
-                                <li>• Incomplete sections ({atsAnalysis.sectionCompleteness}%)</li>
-                              )}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Missing Sections */}
@@ -592,14 +559,67 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   </div>
 
                   <div className="flex justify-center">
-                    <button
-                      onClick={() => setCurrentStep('inputs')}
-                      className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors ${
-                        atsAnalysis.score < 70 ? 'animate-pulse shadow-lg' : ''
-                      }`}
-                    >
-                      {atsAnalysis.score < 70 ? 'Optimize Now (Recommended)' : 'Continue to Optimization'}
-                    </button>
+                    <div className="space-y-4">
+                      {/* Conditional message based on score */}
+                      {atsAnalysis.score >= 90 ? (
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 max-w-lg">
+                          <div className="flex items-start">
+                            <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <h3 className="font-semibold text-green-800 mb-1">Your Resume Is Already Well-Optimized!</h3>
+                              <p className="text-green-700 text-sm">
+                                Congratulations! Your resume scored {Math.round(atsAnalysis.score)}%, which means it's already well-optimized for ATS systems. 
+                                You can proceed to make minor improvements if desired, but your resume is already in excellent shape.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : atsAnalysis.score >= 70 ? (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 max-w-lg">
+                          <div className="flex items-start">
+                            <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <h3 className="font-semibold text-yellow-800 mb-1">Your Resume Could Use Some Improvements</h3>
+                              <p className="text-yellow-700 text-sm">
+                                Your resume scored {Math.round(atsAnalysis.score)}%, which is good but could be better. 
+                                Optimizing your resume will increase your chances of getting past ATS systems and landing interviews.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 max-w-lg">
+                          <div className="flex items-start">
+                            <AlertTriangle className="w-5 h-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <h3 className="font-semibold text-red-800 mb-1">Your Resume Needs Significant Optimization</h3>
+                              <p className="text-red-700 text-sm">
+                                Your resume scored only {Math.round(atsAnalysis.score)}%, which means it's unlikely to pass through ATS systems. 
+                                We strongly recommend optimizing your resume to significantly improve your chances of getting interviews.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <button
+                        onClick={() => setCurrentStep('inputs')}
+                        className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors ${
+                          atsAnalysis.score < 70 ? 'animate-pulse shadow-lg' : ''
+                        }`}
+                      >
+                        {atsAnalysis.score < 70 ? (
+                          <span className="flex items-center">
+                            <Zap className="w-5 h-5 mr-2" />
+                            Optimize Now (Recommended)
+                          </span>
+                        ) : atsAnalysis.score >= 90 ? (
+                          'Continue to Optimization (Optional)'
+                        ) : (
+                          'Continue to Optimization'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

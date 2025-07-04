@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut } from 'lucide-react';
+import { Menu, X, Home, Info, BookOpen, Phone, FileText, LogIn, LogOut, Target } from 'lucide-react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Navigation } from './components/navigation/Navigation';
 import { MobileNavBar } from './components/navigation/MobileNavBar';
 import ResumeOptimizer from './components/ResumeOptimizer';
+import { ATSResumeBuilder } from './components/ATSResumeBuilder';
 import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
@@ -58,6 +59,8 @@ function App() {
         return <Contact />;
       case 'tutorials':
         return <Tutorials />;
+      case 'ats-builder':
+        return <ATSResumeBuilder />;
       case 'home':
       default:
         return (
@@ -71,8 +74,8 @@ function App() {
   return (
     <AuthProvider>
       <div className="min-h-screen pb-16 md:pb-0">
-        {currentPage === 'home' ? (
-          // For home page, show the header with navigation integrated
+        {(currentPage === 'home' || currentPage === 'ats-builder') ? (
+          // For home and ATS builder pages, show the header with navigation integrated
           <>
             <Header onMobileMenuToggle={handleMobileMenuToggle} showMobileMenu={showMobileMenu}>
               <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
@@ -151,7 +154,8 @@ function App() {
                 <div className="border-t border-gray-200 pt-6">
                   <nav className="flex flex-col space-y-4">
                     {[
-                      { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
+                      { id: 'home', label: 'Resume Optimizer', icon: <Home className="w-5 h-5" /> },
+                      { id: 'ats-builder', label: 'ATS Resume Builder', icon: <Target className="w-5 h-5" /> },
                       { id: 'about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                       { id: 'tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                       { id: 'contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> }

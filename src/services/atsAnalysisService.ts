@@ -11,6 +11,26 @@ export interface ATSAnalysisResult {
   keywordDensity: number;
   formatCompliance: number;
   sectionCompleteness: number;
+  keywordAnalysis: {
+    found: string[];
+    missing: string[];
+    relevance: number;
+  };
+  formatIssues: string[];
+  sectionScores: {
+    [key: string]: number;
+  };
+}
+
+export interface ATSAnalysisResult {
+  score: number;
+  missingSections: string[];
+  suggestions: string[];
+  strengths: string[];
+  improvements: string[];
+  keywordDensity: number;
+  formatCompliance: number;
+  sectionCompleteness: number;
 }
 
 export const analyzeResumeForATS = async (resumeText: string, targetRole?: string): Promise<ATSAnalysisResult> => {
@@ -24,14 +44,18 @@ ${targetRole ? `TARGET ROLE: ${targetRole}` : ''}
 ANALYSIS REQUIREMENTS:
 
 1. ATS COMPLIANCE SCORE (0-100):
-   - Section structure and formatting (25%)
-   - Keyword optimization (25%)
-   - Content completeness (25%)
-   - ATS-friendly formatting (25%)
+   - Format & Layout: 20 points (proper fonts, margins, spacing, section headers)
+   - Content Completeness: 30 points (all required sections present and detailed)
+   - Keyword Optimization: 30 points (relevant keywords for the role/industry)
+   - Section Organization: 20 points (logical flow, proper section order)
 
-2. MISSING SECTIONS ANALYSIS:
+2. MANDATORY SECTION VERIFICATION:
    - Identify any missing critical resume sections
-   - Consider standard sections: Contact, Summary/Objective, Experience, Education, Skills, Projects, Certifications
+   - Contact Information (name, phone, email, location)
+   - Professional Experience (company names, titles, dates, achievements)
+   - Education (degree, institution, graduation date)
+   - Technical & Soft Skills
+   - Optional but Recommended: Projects, Certifications, Awards
 
 3. DETAILED FEEDBACK:
    - Strengths: What the resume does well for ATS systems
@@ -40,13 +64,15 @@ ANALYSIS REQUIREMENTS:
 
 4. KEYWORD ANALYSIS:
    - Evaluate keyword density and relevance
-   - Identify missing industry-standard keywords
+   - Identify missing industry-standard keywords based on target role
    - Assess technical skills representation
+   - Calculate keyword density percentage
 
 5. FORMAT COMPLIANCE:
-   - Check for ATS-friendly formatting
+   - Check for ATS-compatible fonts (Arial, Calibri, Times New Roman)
    - Identify potential parsing issues
    - Evaluate section organization
+   - Verify proper section headers and formatting consistency
 
 CRITICAL INSTRUCTIONS:
 - Be specific and actionable in recommendations
@@ -58,13 +84,27 @@ Respond ONLY with valid JSON in this exact structure:
 
 {
   "score": 0-100,
+  "formatCompliance": 0-100,
+  "keywordDensity": 0-100,
+  "sectionCompleteness": 0-100,
   "missingSections": ["section1", "section2"],
   "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
   "strengths": ["strength1", "strength2", "strength3"],
   "improvements": ["improvement1", "improvement2", "improvement3"],
-  "keywordDensity": 0-100,
-  "formatCompliance": 0-100,
-  "sectionCompleteness": 0-100
+  "keywordAnalysis": {
+    "found": ["keyword1", "keyword2"],
+    "missing": ["keyword3", "keyword4"],
+    "relevance": 0-100
+  },
+  "formatIssues": ["issue1", "issue2"],
+  "sectionScores": {
+    "contactInformation": 0-100,
+    "professionalExperience": 0-100,
+    "education": 0-100,
+    "skills": 0-100,
+    "projects": 0-100,
+    "certifications": 0-100
+  }
 }`;
 
   try {
@@ -124,10 +164,35 @@ Respond ONLY with valid JSON in this exact structure:
     }
 
     // Clean the response to ensure it's valid JSON
-    const cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
+    let cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
     
     try {
       const parsedResult = JSON.parse(cleanedResult);
+      
+      // Ensure all required fields exist
+      if (!parsedResult.keywordAnalysis) {
+        parsedResult.keywordAnalysis = {
+          found: [],
+          missing: [],
+          relevance: 0
+        };
+      }
+      
+      if (!parsedResult.formatIssues) {
+        parsedResult.formatIssues = [];
+      }
+      
+      if (!parsedResult.sectionScores) {
+        parsedResult.sectionScores = {
+          contactInformation: 0,
+          professionalExperience: 0,
+          education: 0,
+          skills: 0,
+          projects: 0,
+          certifications: 0
+        };
+      }
+      
       return parsedResult;
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
@@ -138,6 +203,74 @@ Respond ONLY with valid JSON in this exact structure:
     console.error('Error calling Gemini API for ATS analysis:', error);
     throw new Error('Failed to analyze resume for ATS compliance. Please try again.');
   }
+};
+
+// Function to check document readability and formatting
+export const verifyDocumentFormat = (resumeText: string): {
+  isReadable: boolean;
+  hasProperFormatting: boolean;
+  issues: string[];
+} => {
+  const issues: string[] = [];
+  
+  // Check if document is empty or too short
+  if (!resumeText || resumeText.trim().length < 100) {
+    issues.push('Document is too short or empty');
+    return { isReadable: false, hasProperFormatting: false, issues };
+  }
+  
+  // Check for section headers
+  const sectionHeaders = [
+    /experience|work|employment/i,
+    /education|degree|academic/i,
+    /skills|technologies|competencies/i,
+    /projects|portfolio/i,
+    /certification|certificate/i,
+    /summary|profile|objective/i
+  ];
+  
+  let sectionHeadersFound = 0;
+  sectionHeaders.forEach(regex => {
+    if (regex.test(resumeText)) {
+      sectionHeadersFound++;
+    }
+  });
+  
+  if (sectionHeadersFound < 3) {
+    issues.push('Document may be missing proper section headers');
+  }
+  
+  // Check for contact information
+  const hasEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(resumeText);
+  const hasPhone = /(\+\d{1,3}[ -]?)?\(?\d{3}\)?[ -]?\d{3}[ -]?\d{4}/.test(resumeText);
+  
+  if (!hasEmail) {
+    issues.push('No email address detected');
+  }
+  
+  if (!hasPhone) {
+    issues.push('No phone number detected');
+  }
+  
+  // Check for formatting consistency
+  const lines = resumeText.split('\n');
+  const lineCount = lines.length;
+  
+  if (lineCount < 15) {
+    issues.push('Document has too few lines, may have formatting issues');
+  }
+  
+  // Check for bullet points
+  const bulletPoints = resumeText.match(/•|\*|-|–|—|\d+\./g);
+  if (!bulletPoints || bulletPoints.length < 5) {
+    issues.push('Few or no bullet points detected, may lack structured content');
+  }
+  
+  return {
+    isReadable: issues.length < 3,
+    hasProperFormatting: issues.length < 2,
+    issues
+  };
 };
 
 // Helper function to generate ATS optimization suggestions based on missing sections
@@ -182,6 +315,73 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
   return suggestions;
 };
 
+// Function to extract keywords from job description
+export const extractKeywordsFromJobDescription = (jobDescription: string): string[] => {
+  if (!jobDescription) return [];
+  
+  // Common words to exclude
+  const stopWords = new Set([
+    'a', 'an', 'the', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'against', 'between', 'into', 'through',
+    'during', 'before', 'after', 'above', 'below', 'from', 'up', 'down', 'of', 'off', 'over', 'under',
+    'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any',
+    'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own',
+    'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now',
+    'company', 'team', 'role', 'position', 'job', 'candidate', 'applicant', 'looking', 'seeking',
+    'required', 'requirements', 'qualifications', 'experience', 'skills', 'ability', 'able', 'must',
+    'responsibilities', 'duties', 'work', 'working', 'day', 'week', 'month', 'year', 'time', 'hours'
+  ]);
+  
+  // Extract words, remove punctuation, and filter out stop words
+  const words = jobDescription.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !stopWords.has(word));
+  
+  // Count word frequency
+  const wordFrequency: {[key: string]: number} = {};
+  words.forEach(word => {
+    wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+  });
+  
+  // Sort by frequency and get top keywords
+  const sortedWords = Object.entries(wordFrequency)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30)
+    .map(entry => entry[0]);
+  
+  return sortedWords;
+};
+
+// Function to check keyword presence in resume
+export const analyzeKeywordPresence = (resumeText: string, keywords: string[]): {
+  found: string[];
+  missing: string[];
+  density: number;
+} => {
+  const resumeLower = resumeText.toLowerCase();
+  const found: string[] = [];
+  const missing: string[] = [];
+  
+  keywords.forEach(keyword => {
+    if (resumeLower.includes(keyword.toLowerCase())) {
+      found.push(keyword);
+    } else {
+      missing.push(keyword);
+    }
+  });
+  
+  // Calculate keyword density
+  const totalWords = resumeText.split(/\s+/).length;
+  const density = (found.length / keywords.length) * 100;
+  
+  return {
+    found,
+    missing,
+    density: Math.round(density)
+  };
+};
+
 // Function to calculate ATS score based on resume content
 export const calculateATSScore = (resumeText: string): number => {
   let score = 0;
@@ -214,4 +414,77 @@ export const calculateATSScore = (resumeText: string): number => {
   score += verbScore;
   
   return Math.min(Math.round(score), 100);
+};
+
+// Function to generate a comprehensive ATS report
+export const generateATSReport = (analysis: ATSAnalysisResult, resumeText: string, targetRole?: string): string => {
+  const formatScore = (score: number): string => {
+    if (score >= 90) return 'Excellent';
+    if (score >= 80) return 'Very Good';
+    if (score >= 70) return 'Good';
+    if (score >= 60) return 'Fair';
+    if (score >= 50) return 'Needs Improvement';
+    return 'Poor';
+  };
+  
+  const getScoreColor = (score: number): string => {
+    if (score >= 90) return 'green';
+    if (score >= 70) return 'blue';
+    if (score >= 60) return 'orange';
+    return 'red';
+  };
+  
+  let report = `# ATS Resume Analysis Report\n\n`;
+  report += `## Overall Score: ${analysis.score}% (${formatScore(analysis.score)})\n\n`;
+  
+  report += `### Score Breakdown\n`;
+  report += `- Format & Layout: ${analysis.formatCompliance}%\n`;
+  report += `- Content Completeness: ${analysis.sectionCompleteness}%\n`;
+  report += `- Keyword Optimization: ${analysis.keywordDensity}%\n\n`;
+  
+  report += `### Section Analysis\n`;
+  for (const [section, score] of Object.entries(analysis.sectionScores)) {
+    const formattedSection = section.replace(/([A-Z])/g, ' $1').trim();
+    report += `- ${formattedSection}: ${score}% (${formatScore(score)})\n`;
+  }
+  
+  report += `\n### Missing Sections\n`;
+  if (analysis.missingSections.length === 0) {
+    report += `- All critical sections are present ✓\n`;
+  } else {
+    analysis.missingSections.forEach(section => {
+      report += `- ${section} ✗\n`;
+    });
+  }
+  
+  report += `\n### Keyword Analysis\n`;
+  report += `- Found Keywords (${analysis.keywordAnalysis.found.length}): ${analysis.keywordAnalysis.found.join(', ')}\n`;
+  report += `- Missing Keywords (${analysis.keywordAnalysis.missing.length}): ${analysis.keywordAnalysis.missing.join(', ')}\n`;
+  report += `- Keyword Relevance: ${analysis.keywordAnalysis.relevance}%\n`;
+  
+  report += `\n### Format Issues\n`;
+  if (analysis.formatIssues.length === 0) {
+    report += `- No significant formatting issues detected ✓\n`;
+  } else {
+    analysis.formatIssues.forEach(issue => {
+      report += `- ${issue}\n`;
+    });
+  }
+  
+  report += `\n### Strengths\n`;
+  analysis.strengths.forEach(strength => {
+    report += `- ${strength}\n`;
+  });
+  
+  report += `\n### Improvement Areas\n`;
+  analysis.improvements.forEach(improvement => {
+    report += `- ${improvement}\n`;
+  });
+  
+  report += `\n### Actionable Recommendations\n`;
+  analysis.suggestions.forEach((suggestion, index) => {
+    report += `${index + 1}. ${suggestion}\n`;
+  });
+  
+  return report;
 };

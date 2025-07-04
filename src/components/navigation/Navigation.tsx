@@ -14,7 +14,6 @@ export const Navigation: React.FC<NavigationProps> = ({ currentPage, onPageChang
   const navigationItems = [
     { id: 'home', label: 'Resume Optimizer', icon: <Home className="w-4 h-4" /> },
     { id: 'ats-builder', label: 'ATS Builder', icon: <Target className="w-4 h-4" /> },
-    { id: 'ats-analysis', label: 'ATS Analysis', icon: <FileText className="w-4 h-4" /> },
     { id: 'about', label: 'About Us', icon: <Info className="w-4 h-4" /> },
     { id: 'tutorials', label: 'Tutorials', icon: <BookOpen className="w-4 h-4" /> },
     { id: 'contact', label: 'Contact', icon: <Phone className="w-4 h-4" /> },

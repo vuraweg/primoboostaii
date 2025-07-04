@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Upload, 
   FileText, 
-  CheckCircle, 
+  CheckCircle,
   AlertTriangle, 
   User, 
   Github, 
@@ -31,7 +31,7 @@ import { analyzeResumeForATS } from '../services/atsAnalysisService';
 
 interface ATSAnalysis {
   originalScore?: number;
-  score: number;
+  score: number; 
   missingSections: string[];
   suggestions: string[];
   strengths: string[];
@@ -373,9 +373,9 @@ export const ATSResumeBuilder: React.FC = () => {
                   <div className="text-center py-8">
                     <button
                       onClick={analyzeResume}
-                      disabled={isAnalyzing || !userInputs.targetRole.trim()}
+                      disabled={isAnalyzing || !resumeText.trim() || !userInputs.targetRole.trim()}
                       className={`bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto ${
-                        isAnalyzing || !userInputs.targetRole.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                        isAnalyzing || !resumeText.trim() || !userInputs.targetRole.trim() ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       {isAnalyzing ? (
@@ -396,7 +396,7 @@ export const ATSResumeBuilder: React.FC = () => {
                 <div className="space-y-6">
                   {/* ATS Score */}
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 text-center">
-                    <div className="text-4xl font-bold text-gray-900 mb-2">{atsAnalysis.score}%</div>
+                    <div className="text-4xl font-bold text-gray-900 mb-2">{Math.round(atsAnalysis.score)}%</div>
                     <div className="text-lg text-gray-600">ATS Compatibility Score</div>
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${
                       atsAnalysis.score >= 80 ? 'bg-green-100 text-green-800' :
@@ -411,14 +411,13 @@ export const ATSResumeBuilder: React.FC = () => {
                   {/* Score Explanation - Only show if score is below 90 */}
                   {atsAnalysis.score < 90 && (
                     <div className="bg-yellow-50 rounded-xl p-4 border border-yellow-200">
-                      <div className="flex items-start">
+                      <div className="flex items-start space-x-2">
                         <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
                         <div>
                           <h3 className="font-semibold text-yellow-800 mb-1">Why Your Resume Needs Optimization</h3>
                           <p className="text-yellow-700 text-sm">
-                            Your resume scored {atsAnalysis.score}%, which means it may not pass through Applicant Tracking Systems effectively.
-                            {atsAnalysis.score < 70 ? ' This significantly reduces your chances of getting interviews.' : 
-                             ' This could reduce your chances of getting interviews.'}
+                            Your resume scored {Math.round(atsAnalysis.score)}%, which means it may not pass through Applicant Tracking Systems effectively.
+                            {atsAnalysis.score < 70 ? ' This significantly reduces your chances of getting interviews.' : ' This could reduce your chances of getting interviews.'}
                           </p>
                           <div className="mt-2">
                             <span className="text-xs font-medium text-yellow-800">Key issues to address:</span>
@@ -546,7 +545,7 @@ export const ATSResumeBuilder: React.FC = () => {
                     <button
                       onClick={() => setCurrentStep('inputs')}
                       className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors ${
-                        atsAnalysis.score < 70 ? 'animate-pulse' : ''
+                        atsAnalysis.score < 70 ? 'animate-pulse shadow-lg' : ''
                       }`}
                     >
                       {atsAnalysis.score < 70 ? 'Optimize Now (Recommended)' : 'Continue to Optimization'}
@@ -809,7 +808,7 @@ export const ATSResumeBuilder: React.FC = () => {
                       <div className="absolute -top-3 -left-3 bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full">BEFORE</div>
                       <div className="text-center">
                         <div className="text-lg font-medium text-gray-500 mb-2">Original Score</div>
-                        <div className="text-4xl font-bold text-gray-700 mb-2">{atsAnalysis.originalScore}%</div>
+                        <div className="text-4xl font-bold text-gray-700 mb-2">{Math.round(atsAnalysis.originalScore || 0)}%</div>
                         <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           atsAnalysis.originalScore >= 80 ? 'bg-green-100 text-green-800' :
                           atsAnalysis.originalScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
@@ -825,7 +824,7 @@ export const ATSResumeBuilder: React.FC = () => {
                       <div className="absolute -top-3 -left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">AFTER</div>
                       <div className="text-center">
                         <div className="text-lg font-medium text-blue-600 mb-2">Optimized Score</div>
-                        <div className="text-4xl font-bold text-blue-700 mb-2">{atsAnalysis.score}%</div>
+                        <div className="text-4xl font-bold text-blue-700 mb-2">{Math.round(atsAnalysis.score)}%</div>
                         <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           atsAnalysis.score >= 80 ? 'bg-green-100 text-green-800' :
                           atsAnalysis.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
@@ -842,7 +841,7 @@ export const ATSResumeBuilder: React.FC = () => {
                   <div className="mt-6 text-center">
                     <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold shadow">
                       <TrendingUp className="w-4 h-4 mr-2" />
-                      <span className="text-lg">+{atsAnalysis.score - atsAnalysis.originalScore}% Improvement</span>
+                      <span className="text-lg">+{Math.round((atsAnalysis.score || 0) - (atsAnalysis.originalScore || 0))}% Improvement</span>
                     </div>
                   </div>
                   

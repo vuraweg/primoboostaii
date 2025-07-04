@@ -9,6 +9,7 @@ import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
 import { Tutorials } from './components/pages/Tutorials';
 import { AuthModal } from './components/auth/AuthModal';
+import HomePage from './components/dashboard/HomePage';
 import logoImage from '/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
 
 function App() {
@@ -58,6 +59,8 @@ function App() {
         return <Contact />;
       case 'tutorials':
         return <Tutorials />;
+      case 'dashboard':
+        return <HomePage />;
       case 'home':
       default:
         return (
@@ -79,6 +82,9 @@ function App() {
             </Header>
             {renderCurrentPage()}
           </>
+        ) : currentPage === 'dashboard' ? (
+          // For dashboard, don't show the regular header
+          <>{renderCurrentPage()}</>
         ) : (
           // For other pages, show a simpler header with navigation
           <>
@@ -152,6 +158,7 @@ function App() {
                   <nav className="flex flex-col space-y-4">
                     {[
                       { id: 'home', label: 'Home', icon: <Home className="w-5 h-5" /> },
+                      { id: 'dashboard', label: 'Dashboard', icon: <FileText className="w-5 h-5" /> },
                       { id: 'about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                       { id: 'tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                       { id: 'contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> }
@@ -258,6 +265,16 @@ const AuthButtons: React.FC<{
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              onPageChange('dashboard');
+              onClose();
+            }}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700"
+          >
+            <FileText className="w-5 h-5" />
+            <span>Dashboard</span>
+          </button>
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}

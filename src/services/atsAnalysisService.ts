@@ -5,9 +5,6 @@ const GEMINI_API_KEY = 'AIzaSyAYxmudWmbhrzaFTg2btswt6V2QHiAR_BE';
 // Cache for storing analysis results to ensure consistency
 const analysisCache = new Map<string, ATSAnalysisResult>();
 
-// Cache for storing analysis results to ensure consistency
-const analysisCache = new Map<string, ATSAnalysisResult>();
-
 export interface ATSAnalysisResult {
   score: number;
   missingSections: string[];
@@ -20,14 +17,6 @@ export interface ATSAnalysisResult {
 }
 
 export const analyzeResumeForATS = async (resumeText: string, targetRole?: string): Promise<ATSAnalysisResult> => {
-  // Generate a cache key based on resume text and target role
-  const cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
-  
-  // Check if we already have an analysis for this resume
-  if (analysisCache.has(cacheKey)) {
-    return analysisCache.get(cacheKey)!;
-  }
-  
   // Generate a cache key based on resume text and target role
   const cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
@@ -54,7 +43,6 @@ ANALYSIS REQUIREMENTS:
 2. MISSING SECTIONS ANALYSIS:
    - Identify any missing critical resume sections
    - Consider standard sections: Contact, Experience, Education, Skills, Projects, Certifications
-   - Note: Summary/Objective is OPTIONAL and should NOT be counted as missing
    - Note: Summary/Objective is OPTIONAL and should NOT be counted as missing
 
 3. DETAILED FEEDBACK:
@@ -156,10 +144,6 @@ Respond ONLY with valid JSON in this exact structure:
       // Store in cache for consistency
       analysisCache.set(cacheKey, parsedResult);
       
-      
-      // Store in cache for consistency
-      analysisCache.set(cacheKey, parsedResult);
-      
       return parsedResult;
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
@@ -181,12 +165,6 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
     section => section !== 'Professional Summary' && 
     section !== 'Summary' && 
     section !== 'Objective'
-  );
-
-  if (filteredMissingSections.includes('Contact Information')) {
-  }
-  const filteredMissingSections = missingSections.filter(
-    section => section !== 'Professional Summary' && section !== 'Summary' && section !== 'Objective'
   );
 
   if (filteredMissingSections.includes('Contact Information')) {
@@ -230,7 +208,6 @@ export const calculateATSScore = (resumeText: string): number => {
     education: /(?:education|degree|university)/i.test(resumeText) ? 8 : 0,
     skills: /(?:skills|technologies|technical)/i.test(resumeText) ? 10 : 0,
     // Summary is optional, so always award these points
-    summary: 4
     summary: 4
   };
   

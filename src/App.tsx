@@ -8,6 +8,7 @@ import ResumeOptimizer from './components/ResumeOptimizer';
 import { ATSResumeBuilder } from './components/ATSResumeBuilder';
 import { AboutUs } from './components/pages/AboutUs';
 import { Contact } from './components/pages/Contact';
+import { JobApplicationTracker } from './components/JobApplicationTracker';
 import { Tutorials } from './components/pages/Tutorials';
 import { AuthModal } from './components/auth/AuthModal';
 import logoImage from '/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
@@ -61,6 +62,8 @@ const App: React.FC = () => {
         return <Tutorials />;
       case 'ats-builder':
         return <ATSResumeBuilder onBackToHome={() => setCurrentPage('home')} />;
+      case 'job-tracker':
+        return <JobApplicationTracker />;
       case 'home':
       default:
         return (
@@ -156,6 +159,7 @@ const App: React.FC = () => {
                     {[
                       { id: 'home', label: 'Resume Optimizer', icon: <Home className="w-5 h-5" /> },
                       { id: 'ats-builder', label: 'ATS Resume Builder', icon: <Target className="w-5 h-5" /> },
+                      { id: 'job-tracker', label: 'Job Tracker', icon: <Briefcase className="w-5 h-5" /> },
                       { id: 'about', label: 'About Us', icon: <Info className="w-5 h-5" /> },
                       { id: 'tutorials', label: 'Tutorials', icon: <BookOpen className="w-5 h-5" /> },
                       { id: 'contact', label: 'Contact', icon: <Phone className="w-5 h-5" /> }

@@ -19,7 +19,8 @@ import {
   User,
   Sparkles,
   Github,
-  Linkedin
+  Linkedin,
+  Lock
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { ResumePreview } from './ResumePreview';
@@ -27,12 +28,15 @@ import { ExportButtons } from './ExportButtons';
 import { ResumeData, UserType } from '../types/resume';
 import { analyzeResumeForATS } from '../services/atsAnalysisService';
 import { optimizeResume } from '../services/geminiService';
+import { useAuth } from '../contexts/AuthContext';
+import { AuthModal } from './auth/AuthModal';
 
 interface ATSResumeAnalysisProps {
   onBack?: () => void;
 }
 
 export const ATSResumeAnalysis: React.FC<ATSResumeAnalysisProps> = ({ onBack }) => {
+  const { user, isAuthenticated } = useAuth();
   const [resumeText, setResumeText] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -52,12 +56,18 @@ export const ATSResumeAnalysis: React.FC<ATSResumeAnalysisProps> = ({ onBack }) 
     additionalDetails: ''
   });
   const [showComparison, setShowComparison] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleFileUpload = (text: string) => {
     setResumeText(text);
   };
 
   const analyzeResume = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!resumeText.trim()) {
       alert('Please upload your resume first.');
       return;
@@ -97,6 +107,11 @@ export const ATSResumeAnalysis: React.FC<ATSResumeAnalysisProps> = ({ onBack }) 
   };
 
   const handleOptimize = async () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+
     if (!resumeText.trim()) {
       alert('Please upload your resume first.');
       return;
@@ -191,6 +206,39 @@ export const ATSResumeAnalysis: React.FC<ATSResumeAnalysisProps> = ({ onBack }) 
     });
     setShowComparison(false);
   };
+
+  // Authentication check
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
+        <div className="container mx-auto px-4 max-w-md">
+          <div className="text-center mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Lock className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Sign In Required
+            </h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Please sign in to access the ATS Resume Analysis feature
+            </p>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Sign In to Continue
+            </button>
+          </div>
+          
+          {/* Auth Modal */}
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
@@ -834,6 +882,12 @@ export const ATSResumeAnalysis: React.FC<ATSResumeAnalysisProps> = ({ onBack }) 
           </div>
         )}
       </div>
+      
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 };

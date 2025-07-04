@@ -2,6 +2,9 @@ import { ResumeData } from '../types/resume';
 
 const GEMINI_API_KEY = 'AIzaSyAYxmudWmbhrzaFTg2btswt6V2QHiAR_BE';
 
+// Cache for storing analysis results to ensure consistency
+const analysisCache = new Map<string, ATSAnalysisResult>();
+
 export interface ATSAnalysisResult {
   score: number;
   missingSections: string[];
@@ -14,6 +17,14 @@ export interface ATSAnalysisResult {
 }
 
 export const analyzeResumeForATS = async (resumeText: string, targetRole?: string): Promise<ATSAnalysisResult> => {
+  // Generate a cache key based on resume text and target role
+  const cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
+  
+  // Check if we already have an analysis for this resume
+  if (analysisCache.has(cacheKey)) {
+    return analysisCache.get(cacheKey)!;
+  }
+  
   const prompt = `You are an expert ATS (Applicant Tracking System) analyzer and resume optimization specialist. Analyze the provided resume for ATS compliance and provide detailed feedback.
 
 RESUME CONTENT:
@@ -31,7 +42,8 @@ ANALYSIS REQUIREMENTS:
 
 2. MISSING SECTIONS ANALYSIS:
    - Identify any missing critical resume sections
-   - Consider standard sections: Contact, Summary/Objective, Experience, Education, Skills, Projects, Certifications
+   - Consider standard sections: Contact, Experience, Education, Skills, Projects, Certifications
+   - Note: Summary/Objective is OPTIONAL and should NOT be counted as missing
 
 3. DETAILED FEEDBACK:
    - Strengths: What the resume does well for ATS systems
@@ -128,6 +140,10 @@ Respond ONLY with valid JSON in this exact structure:
     
     try {
       const parsedResult = JSON.parse(cleanedResult);
+      
+      // Store in cache for consistency
+      analysisCache.set(cacheKey, parsedResult);
+      
       return parsedResult;
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
@@ -143,32 +159,33 @@ Respond ONLY with valid JSON in this exact structure:
 // Helper function to generate ATS optimization suggestions based on missing sections
 export const generateATSSuggestions = (missingSections: string[]): string[] => {
   const suggestions: string[] = [];
-  
-  if (missingSections.includes('Contact Information')) {
+
+  // Filter out Summary/Objective from missing sections
+  const filteredMissingSections = missingSections.filter(
+    section => section !== 'Professional Summary' && section !== 'Summary' && section !== 'Objective'
+  );
+
+  if (filteredMissingSections.includes('Contact Information')) {
     suggestions.push('Add complete contact information including phone, email, LinkedIn, and location');
   }
   
-  if (missingSections.includes('Professional Summary')) {
-    suggestions.push('Include a compelling professional summary with 2-3 sentences highlighting your key achievements');
-  }
-  
-  if (missingSections.includes('Work Experience')) {
+  if (filteredMissingSections.includes('Work Experience')) {
     suggestions.push('Add detailed work experience with quantifiable achievements and action verbs');
   }
   
-  if (missingSections.includes('Technical Skills')) {
+  if (filteredMissingSections.includes('Technical Skills')) {
     suggestions.push('Create a comprehensive skills section with relevant technologies and tools');
   }
   
-  if (missingSections.includes('Education')) {
+  if (filteredMissingSections.includes('Education')) {
     suggestions.push('Include your educational background with degrees, institutions, and graduation dates');
   }
   
-  if (missingSections.includes('Projects')) {
+  if (filteredMissingSections.includes('Projects')) {
     suggestions.push('Add relevant projects to showcase practical experience and technical skills');
   }
   
-  if (missingSections.includes('Certifications')) {
+  if (filteredMissingSections.includes('Certifications')) {
     suggestions.push('Include professional certifications and training relevant to your field');
   }
   
@@ -186,13 +203,14 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
 export const calculateATSScore = (resumeText: string): number => {
   let score = 0;
   
-  // Check for essential sections (40 points total)
+  // Check for essential sections (40 points total) - Summary/Objective is optional
   const sections = {
     contact: /(?:phone|email|linkedin)/i.test(resumeText) ? 8 : 0,
     experience: /(?:experience|work|employment)/i.test(resumeText) ? 10 : 0,
     education: /(?:education|degree|university)/i.test(resumeText) ? 8 : 0,
     skills: /(?:skills|technologies|technical)/i.test(resumeText) ? 10 : 0,
-    summary: /(?:summary|objective|profile)/i.test(resumeText) ? 4 : 0
+    // Summary is optional, so always award these points
+    summary: 4
   };
   
   score += Object.values(sections).reduce((sum, points) => sum + points, 0);

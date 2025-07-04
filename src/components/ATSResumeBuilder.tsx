@@ -422,8 +422,16 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                             <div className="mt-2">
                               <span className="text-xs font-medium text-yellow-800">Key issues to address:</span>
                               <ul className="mt-1 text-xs text-yellow-700 space-y-1">
-                                {atsAnalysis.missingSections.length > 0 && (
-                                  <li>• Missing sections: {atsAnalysis.missingSections.join(', ')}</li>
+                                {atsAnalysis.missingSections.filter(section => 
+                                  section !== 'Professional Summary' && 
+                                  section !== 'Summary' && 
+                                  section !== 'Objective'
+                                ).length > 0 && (
+                                  <li>• Missing sections: {atsAnalysis.missingSections.filter(section => 
+                                    section !== 'Professional Summary' && 
+                                    section !== 'Summary' && 
+                                    section !== 'Objective'
+                                  ).join(', ')}</li>
                                 )}
                                 {atsAnalysis.keywordDensity < 5 && (
                                   <li>• Low keyword density ({atsAnalysis.keywordDensity}%)</li>
@@ -460,14 +468,24 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
 
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Missing Sections */}
-                    {atsAnalysis.missingSections.length > 0 && (
+                    {atsAnalysis.missingSections.filter(section => 
+                      section !== 'Professional Summary' && 
+                      section !== 'Summary' && 
+                      section !== 'Objective'
+                    ).length > 0 && (
                       <div className="bg-red-50 rounded-xl p-6 border border-red-200">
                         <h3 className="text-lg font-semibold text-red-900 mb-3 flex items-center">
                           <AlertTriangle className="w-5 h-5 mr-2" />
                           Missing Sections
                         </h3>
                         <ul className="space-y-2">
-                          {atsAnalysis.missingSections.map((section, index) => (
+                          {atsAnalysis.missingSections
+                            .filter(section => 
+                              section !== 'Professional Summary' && 
+                              section !== 'Summary' && 
+                              section !== 'Objective'
+                            )
+                            .map((section, index) => (
                             <li key={index} className="text-red-700 text-sm flex items-center">
                               <div className="w-2 h-2 bg-red-500 rounded-full mr-2" />
                               {section}
@@ -684,7 +702,11 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 </div>
 
                 {/* Complete Missing Sections */}
-                {atsAnalysis && atsAnalysis.missingSections.length > 0 && (
+                {atsAnalysis && atsAnalysis.missingSections.filter(section => 
+                  section !== 'Professional Summary' && 
+                  section !== 'Summary' && 
+                  section !== 'Objective'
+                ).length > 0 && (
                   <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                     <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
                       <FileText className="w-5 h-5 mr-2" />
@@ -696,7 +718,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     
                     <div className="space-y-4">
                       {/* Professional Summary */}
-                      {atsAnalysis.missingSections.includes('Professional Summary') && (
+                      {false && atsAnalysis.missingSections.includes('Professional Summary') && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Professional Summary
@@ -711,7 +733,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       )}
                       
                       {/* Work Experience */}
-                      {atsAnalysis.missingSections.includes('Work Experience') && (
+                      {atsAnalysis.missingSections.filter(s => s === 'Work Experience').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Work Experience
@@ -726,7 +748,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       )}
                       
                       {/* Education */}
-                      {atsAnalysis.missingSections.includes('Education') && (
+                      {atsAnalysis.missingSections.filter(s => s === 'Education').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Education
@@ -741,7 +763,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       )}
                       
                       {/* Skills */}
-                      {atsAnalysis.missingSections.includes('Technical Skills') && (
+                      {atsAnalysis.missingSections.filter(s => s === 'Technical Skills').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Technical Skills
@@ -756,7 +778,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       )}
                       
                       {/* Certifications */}
-                      {atsAnalysis.missingSections.includes('Certifications') && (
+                      {atsAnalysis.missingSections.filter(s => s === 'Certifications').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Certifications

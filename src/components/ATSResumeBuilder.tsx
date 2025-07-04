@@ -30,11 +30,11 @@ import { ResumePreview } from './ResumePreview';
 import { ExportButtons } from './ExportButtons';
 import { ResumeData, UserType } from '../types/resume';
 import { optimizeResume } from '../services/geminiService';
-import { analyzeResumeForATS, ATSAnalysisResult } from '../services/atsAnalysisService';
 import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
 import { 
   analyzeResumeForATS, 
+  ATSAnalysisResult,
   verifyDocumentFormat, 
   extractKeywordsFromJobDescription, 
   analyzeKeywordPresence 

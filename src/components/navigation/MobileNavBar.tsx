@@ -25,7 +25,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ currentPage, onPageC
             className={`flex flex-col items-center justify-center py-3 px-2 min-w-[64px] min-h-[64px] transition-colors ${
               currentPage === item.id
                 ? 'text-blue-600'
-                : 'text-gray-600'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >

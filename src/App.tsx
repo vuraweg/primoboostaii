@@ -12,7 +12,7 @@ import { Tutorials } from './components/pages/Tutorials';
 import { AuthModal } from './components/auth/AuthModal';
 import logoImage from '/a-modern-logo-design-featuring-primoboos_XhhkS8E_Q5iOwxbAXB4CqQ_HnpCsJn4S1yrhb826jmMDw.jpeg';
 
-function App() {
+const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -60,12 +60,12 @@ function App() {
       case 'tutorials':
         return <Tutorials />;
       case 'ats-builder':
-        return <ATSResumeBuilder />;
+        return <ATSResumeBuilder onBackToHome={() => setCurrentPage('home')} />;
       case 'home':
       default:
         return (
           <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-            <ResumeOptimizer />
+            <ResumeOptimizer onPageChange={setCurrentPage} />
           </div>
         );
     }

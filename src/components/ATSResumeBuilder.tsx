@@ -214,6 +214,18 @@ export const ATSResumeBuilder: React.FC = () => {
     setCurrentStep('upload');
   };
 
+  // Define steps for the progress indicator
+  const steps = [
+    { id: 'upload', label: 'Upload', icon: <Upload className="w-5 h-5" /> },
+    { id: 'analyze', label: 'Analyze', icon: <Eye className="w-5 h-5" /> },
+    { id: 'inputs', label: 'Details', icon: <User className="w-5 h-5" /> },
+    { id: 'optimize', label: 'Optimize', icon: <TrendingUp className="w-5 h-5" /> },
+    { id: 'result', label: 'Result', icon: <CheckCircle className="w-5 h-5" /> }
+  ];
+
+  // Get current step index
+  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -230,21 +242,15 @@ export const ATSResumeBuilder: React.FC = () => {
           </p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex justify-center mb-8">
+        {/* Progress Steps - Desktop Version (hidden on mobile) */}
+        <div className="hidden md:flex justify-center mb-8">
           <div className="flex items-center space-x-4">
-            {[
-              { id: 'upload', label: 'Upload', icon: <Upload className="w-5 h-5" /> },
-              { id: 'analyze', label: 'Analyze', icon: <Eye className="w-5 h-5" /> },
-              { id: 'inputs', label: 'Details', icon: <User className="w-5 h-5" /> },
-              { id: 'optimize', label: 'Optimize', icon: <TrendingUp className="w-5 h-5" /> },
-              { id: 'result', label: 'Result', icon: <CheckCircle className="w-5 h-5" /> }
-            ].map((step, index) => (
+            {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
                   currentStep === step.id 
                     ? 'bg-blue-600 text-white' 
-                    : index < ['upload', 'analyze', 'inputs', 'optimize', 'result'].indexOf(currentStep)
+                    : index < currentStepIndex
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-200 text-gray-600'
                 }`}>
@@ -254,6 +260,49 @@ export const ATSResumeBuilder: React.FC = () => {
                 {index < 4 && <div className="w-8 h-0.5 bg-gray-300 mx-4" />}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Progress Steps - Mobile Version (visible only on mobile) */}
+        <div className="md:hidden mb-6">
+          <div className="bg-white rounded-xl shadow-md p-4">
+            {/* Step Pills */}
+            <div className="flex justify-between mb-2">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.id} 
+                  className={`flex flex-col items-center ${
+                    index === currentStepIndex ? 'opacity-100' : 'opacity-60'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
+                    currentStep === step.id 
+                      ? 'bg-blue-600 text-white' 
+                      : index < currentStepIndex
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {step.icon}
+                  </div>
+                  <span className="text-xs font-medium text-gray-700 text-center">{step.label}</span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+              ></div>
+            </div>
+            
+            {/* Current Step Label */}
+            <div className="text-center mt-2">
+              <span className="text-sm font-medium text-blue-700">
+                Step {currentStepIndex + 1} of {steps.length}: {steps[currentStepIndex].label}
+              </span>
+            </div>
           </div>
         </div>
 

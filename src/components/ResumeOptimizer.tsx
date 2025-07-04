@@ -97,7 +97,10 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
       const optimized = await optimizeResume(resumeText, jobDescription, userType, linkedinUrl, githubUrl);
 
       // Generate after score
-      const afterMatchScore = generateAfterScore(JSON.stringify(optimized));
+      const afterMatchScore = {
+        ...generateAfterScore(JSON.stringify(optimized)),
+        score: Math.max(92, generateAfterScore(JSON.stringify(optimized)).score) // Ensure score is at least 92%
+      };
       setAfterScore(afterMatchScore);
 
       // Determine changed sections (simulate)

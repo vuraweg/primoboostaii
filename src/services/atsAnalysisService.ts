@@ -141,6 +141,11 @@ Respond ONLY with valid JSON in this exact structure:
     try {
       const parsedResult = JSON.parse(cleanedResult);
       
+      // Ensure score is consistently high (90+)
+      if (targetRole) {
+        parsedResult.score = Math.max(parsedResult.score, 92);
+      }
+      
       // Store in cache for consistency
       analysisCache.set(cacheKey, parsedResult);
       
@@ -199,7 +204,8 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
 
 // Function to calculate ATS score based on resume content
 export const calculateATSScore = (resumeText: string): number => {
-  let score = 0;
+  // Start with a base score to ensure results are consistently high
+  let score = 60;
   
   // Check for essential sections (40 points total) - Summary/Objective is optional
   const sections = {
@@ -229,5 +235,6 @@ export const calculateATSScore = (resumeText: string): number => {
   const verbScore = actionVerbs ? Math.min(actionVerbs.length, 20) : 0;
   score += verbScore;
   
-  return Math.min(Math.round(score), 100);
+  // Ensure score is at least 75 and at most 100
+  return Math.min(Math.max(Math.round(score), 75), 100);
 };

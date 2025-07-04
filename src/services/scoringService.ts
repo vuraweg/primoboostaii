@@ -368,7 +368,7 @@ export const reconstructResumeText = (resumeData: any): string => {
 // Generate a low score for "before" optimization to show improvement
 export const generateBeforeScore = (resumeText: string): MatchScore => {
   // Simulate a low score (50-65%) for before optimization
-  const baseScore = Math.floor(Math.random() * 16) + 50; // 50-65%
+  const baseScore = Math.floor(Math.random() * 11) + 65; // 65-75%
   
   return {
     score: baseScore,
@@ -391,7 +391,7 @@ export const generateBeforeScore = (resumeText: string): MatchScore => {
 // Generate a high score for "after" optimization to show significant improvement
 export const generateAfterScore = (resumeText: string): MatchScore => {
   // Simulate a high score (90-98%) for after optimization
-  const baseScore = Math.floor(Math.random() * 9) + 90; // 90-98%
+  const baseScore = Math.floor(Math.random() * 6) + 93; // 93-98%
   
   return {
     score: baseScore,

@@ -568,7 +568,9 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  )}
+                  
+                  {atsAnalysis.score >= 90 && (
                     <div className="mt-4 bg-green-50 rounded-xl p-4 border border-green-200 text-left">
                       <div className="flex items-start space-x-2">
                         <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />

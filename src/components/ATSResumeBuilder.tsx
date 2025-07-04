@@ -14,7 +14,10 @@ import {
   Target,
   TrendingUp,
   Eye,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  Award,
+  Zap
 } from 'lucide-react';
 import { FileUpload } from './FileUpload';
 import { ResumePreview } from './ResumePreview';
@@ -24,6 +27,7 @@ import { optimizeResume } from '../services/geminiService';
 import { getMatchScore } from '../services/scoringService';
 import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
+import { analyzeResumeForATS } from '../services/atsAnalysisService';
 
 interface ATSAnalysis {
   score: number;
@@ -31,6 +35,9 @@ interface ATSAnalysis {
   suggestions: string[];
   strengths: string[];
   improvements: string[];
+  keywordDensity: number;
+  formatCompliance: number;
+  sectionCompleteness: number;
 }
 
 interface UserInputs {
@@ -55,6 +62,14 @@ export const ATSResumeBuilder: React.FC = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'analyze' | 'inputs' | 'optimize' | 'result'>('upload');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [formData, setFormData] = useState({
+    summary: '',
+    experience: '',
+    education: '',
+    skills: '',
+    certifications: '',
+    additionalDetails: ''
+  });
 
   const handleFileUpload = (text: string) => {
     setResumeText(text);
@@ -69,8 +84,28 @@ export const ATSResumeBuilder: React.FC = () => {
     setIsAnalyzing(true);
     try {
       // Analyze resume for ATS compliance and missing sections
-      const analysis = await analyzeResumeForATS(resumeText);
+      const analysis = await analyzeResumeForATS(resumeText, userInputs.targetRole);
       setAtsAnalysis(analysis);
+      
+      // Pre-fill form data based on missing sections
+      const newFormData = { ...formData };
+      if (analysis.missingSections.includes('Professional Summary')) {
+        newFormData.summary = '';
+      }
+      if (analysis.missingSections.includes('Work Experience')) {
+        newFormData.experience = '';
+      }
+      if (analysis.missingSections.includes('Education')) {
+        newFormData.education = '';
+      }
+      if (analysis.missingSections.includes('Technical Skills')) {
+        newFormData.skills = '';
+      }
+      if (analysis.missingSections.includes('Certifications')) {
+        newFormData.certifications = '';
+      }
+      setFormData(newFormData);
+      
       setCurrentStep('inputs');
     } catch (error) {
       console.error('Error analyzing resume:', error);
@@ -78,6 +113,13 @@ export const ATSResumeBuilder: React.FC = () => {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleOptimize = async () => {
@@ -100,12 +142,39 @@ export const ATSResumeBuilder: React.FC = () => {
         return;
       }
 
+      // Create enhanced resume text with form data for missing sections
+      let enhancedResumeText = resumeText;
+      
+      if (formData.summary.trim()) {
+        enhancedResumeText = `PROFESSIONAL SUMMARY:\n${formData.summary}\n\n${enhancedResumeText}`;
+      }
+      
+      if (formData.experience.trim()) {
+        enhancedResumeText = `${enhancedResumeText}\n\nWORK EXPERIENCE:\n${formData.experience}`;
+      }
+      
+      if (formData.education.trim()) {
+        enhancedResumeText = `${enhancedResumeText}\n\nEDUCATION:\n${formData.education}`;
+      }
+      
+      if (formData.skills.trim()) {
+        enhancedResumeText = `${enhancedResumeText}\n\nSKILLS:\n${formData.skills}`;
+      }
+      
+      if (formData.certifications.trim()) {
+        enhancedResumeText = `${enhancedResumeText}\n\nCERTIFICATIONS:\n${formData.certifications}`;
+      }
+      
+      if (formData.additionalDetails.trim()) {
+        enhancedResumeText = `${enhancedResumeText}\n\nADDITIONAL INFORMATION:\n${formData.additionalDetails}`;
+      }
+
       // Create job description from target role
       const jobDescription = `Position: ${userInputs.targetRole}\n\nWe are looking for a qualified ${userInputs.targetRole} to join our team. The ideal candidate should have relevant experience and skills in this field.`;
 
       // Optimize resume
       const optimized = await optimizeResume(
-        resumeText,
+        enhancedResumeText,
         jobDescription,
         userInputs.userType,
         userInputs.linkedinUrl,
@@ -115,6 +184,13 @@ export const ATSResumeBuilder: React.FC = () => {
       // Use optimization count
       await paymentService.useOptimization(user!.id);
 
+      // Get updated ATS score
+      const updatedAnalysis = await analyzeResumeForATS(JSON.stringify(optimized), userInputs.targetRole);
+      setAtsAnalysis({
+        ...updatedAnalysis,
+        originalScore: atsAnalysis?.score || 0
+      });
+
       setOptimizedResume(optimized);
       setCurrentStep('result');
     } catch (error) {
@@ -123,82 +199,6 @@ export const ATSResumeBuilder: React.FC = () => {
     } finally {
       setIsOptimizing(false);
     }
-  };
-
-  const analyzeResumeForATS = async (resumeText: string): Promise<ATSAnalysis> => {
-    // Simulate ATS analysis - in real implementation, this would use AI
-    const sections = {
-      contact: /(?:phone|email|linkedin|github)/i.test(resumeText),
-      summary: /(?:summary|objective|profile)/i.test(resumeText),
-      experience: /(?:experience|work|employment|job)/i.test(resumeText),
-      education: /(?:education|degree|university|college)/i.test(resumeText),
-      skills: /(?:skills|technologies|technical)/i.test(resumeText),
-      projects: /(?:projects|portfolio)/i.test(resumeText),
-      certifications: /(?:certification|certificate|certified)/i.test(resumeText)
-    };
-
-    const missingSections = [];
-    const suggestions = [];
-    const strengths = [];
-    const improvements = [];
-
-    // Check for missing sections
-    if (!sections.contact) {
-      missingSections.push('Contact Information');
-      suggestions.push('Add complete contact details including phone, email, and professional profiles');
-    } else {
-      strengths.push('Complete contact information provided');
-    }
-
-    if (!sections.summary) {
-      missingSections.push('Professional Summary');
-      suggestions.push('Add a compelling professional summary highlighting your key achievements');
-    } else {
-      strengths.push('Professional summary included');
-    }
-
-    if (!sections.experience) {
-      missingSections.push('Work Experience');
-      suggestions.push('Include detailed work experience with quantifiable achievements');
-    } else {
-      strengths.push('Work experience section present');
-    }
-
-    if (!sections.skills) {
-      missingSections.push('Technical Skills');
-      suggestions.push('Add a comprehensive skills section with relevant technologies');
-    } else {
-      strengths.push('Skills section included');
-    }
-
-    if (!sections.projects) {
-      missingSections.push('Projects');
-      suggestions.push('Include relevant projects to showcase your practical experience');
-    }
-
-    if (!sections.education) {
-      missingSections.push('Education');
-      suggestions.push('Add your educational background and qualifications');
-    }
-
-    // Calculate ATS score
-    const presentSections = Object.values(sections).filter(Boolean).length;
-    const totalSections = Object.keys(sections).length;
-    const baseScore = (presentSections / totalSections) * 100;
-
-    // Add improvements
-    improvements.push('Use standard section headings (Experience, Education, Skills)');
-    improvements.push('Include relevant keywords from job descriptions');
-    improvements.push('Use bullet points for better readability');
-    improvements.push('Ensure consistent formatting throughout');
-
-    return {
-      score: Math.round(baseScore),
-      missingSections,
-      suggestions,
-      strengths,
-      improvements
-    };
   };
 
   const resetBuilder = () => {
@@ -212,6 +212,14 @@ export const ATSResumeBuilder: React.FC = () => {
     setAtsAnalysis(null);
     setOptimizedResume(null);
     setCurrentStep('upload');
+    setFormData({
+      summary: '',
+      experience: '',
+      education: '',
+      skills: '',
+      certifications: '',
+      additionalDetails: ''
+    });
   };
 
   // Define steps for the progress indicator
@@ -338,24 +346,48 @@ export const ATSResumeBuilder: React.FC = () => {
               </h2>
               
               {!atsAnalysis ? (
-                <div className="text-center py-8">
-                  <button
-                    onClick={analyzeResume}
-                    disabled={isAnalyzing}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Analyzing Resume...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Target className="w-5 h-5" />
-                        <span>Analyze for ATS Compliance</span>
-                      </>
-                    )}
-                  </button>
+                <div className="space-y-6">
+                  {/* Target Role Input */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Target Role/Position *
+                    </label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        value={userInputs.targetRole}
+                        onChange={(e) => setUserInputs(prev => ({ ...prev, targetRole: e.target.value }))}
+                        placeholder="e.g., Senior Software Engineer, Data Scientist, Product Manager"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                      This helps us analyze your resume against specific job requirements
+                    </p>
+                  </div>
+                  
+                  <div className="text-center py-8">
+                    <button
+                      onClick={analyzeResume}
+                      disabled={isAnalyzing || !userInputs.targetRole.trim()}
+                      className={`bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto ${
+                        isAnalyzing || !userInputs.targetRole.trim() ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Analyzing Resume...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Target className="w-5 h-5" />
+                          <span>Analyze for ATS Compliance</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -406,6 +438,54 @@ export const ATSResumeBuilder: React.FC = () => {
                           </li>
                         ))}
                       </ul>
+                    </div>
+                  </div>
+
+                  {/* Detailed Analysis */}
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                        <BarChart3 className="w-5 h-5 mr-2" />
+                        Keyword Density
+                      </h3>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-700 mb-2">{atsAnalysis.keywordDensity}%</div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          atsAnalysis.keywordDensity >= 5 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {atsAnalysis.keywordDensity >= 5 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                      <h3 className="text-lg font-semibold text-purple-900 mb-3 flex items-center">
+                        <FileText className="w-5 h-5 mr-2" />
+                        Format Compliance
+                      </h3>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-purple-700 mb-2">{atsAnalysis.formatCompliance}%</div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          atsAnalysis.formatCompliance >= 80 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {atsAnalysis.formatCompliance >= 80 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-orange-50 rounded-xl p-6 border border-orange-200">
+                      <h3 className="text-lg font-semibold text-orange-900 mb-3 flex items-center">
+                        <Award className="w-5 h-5 mr-2" />
+                        Section Completeness
+                      </h3>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-orange-700 mb-2">{atsAnalysis.sectionCompleteness}%</div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          atsAnalysis.sectionCompleteness >= 80 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {atsAnalysis.sectionCompleteness >= 80 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -495,6 +575,106 @@ export const ATSResumeBuilder: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Complete Missing Sections */}
+                {atsAnalysis && atsAnalysis.missingSections.length > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Complete Missing Sections
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      {/* Professional Summary */}
+                      {atsAnalysis.missingSections.includes('Professional Summary') && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Professional Summary
+                          </label>
+                          <textarea
+                            value={formData.summary}
+                            onChange={(e) => handleInputChange('summary', e.target.value)}
+                            placeholder="Write a compelling 2-3 sentence summary highlighting your key skills, experience, and value proposition..."
+                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Work Experience */}
+                      {atsAnalysis.missingSections.includes('Work Experience') && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Work Experience
+                          </label>
+                          <textarea
+                            value={formData.experience}
+                            onChange={(e) => handleInputChange('experience', e.target.value)}
+                            placeholder="List your work experience with company names, job titles, dates, and key achievements..."
+                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Education */}
+                      {atsAnalysis.missingSections.includes('Education') && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Education
+                          </label>
+                          <textarea
+                            value={formData.education}
+                            onChange={(e) => handleInputChange('education', e.target.value)}
+                            placeholder="List your educational background including degrees, institutions, and graduation dates..."
+                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Skills */}
+                      {atsAnalysis.missingSections.includes('Technical Skills') && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Technical Skills
+                          </label>
+                          <textarea
+                            value={formData.skills}
+                            onChange={(e) => handleInputChange('skills', e.target.value)}
+                            placeholder="List your technical skills, programming languages, tools, and technologies..."
+                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Certifications */}
+                      {atsAnalysis.missingSections.includes('Certifications') && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Certifications
+                          </label>
+                          <textarea
+                            value={formData.certifications}
+                            onChange={(e) => handleInputChange('certifications', e.target.value)}
+                            placeholder="List relevant certifications, including name, issuing organization, and date..."
+                            className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Additional Details */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Additional Details (Optional)
+                        </label>
+                        <textarea
+                          value={formData.additionalDetails}
+                          onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
+                          placeholder="Any other information you'd like to include (projects, achievements, languages, etc.)..."
+                          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* LinkedIn URL */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -565,6 +745,56 @@ export const ATSResumeBuilder: React.FC = () => {
                   Your resume has been optimized for ATS systems and is ready for download.
                 </p>
               </div>
+
+              {/* Score Improvement */}
+              {atsAnalysis && 'originalScore' in atsAnalysis && (
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                    ATS Score Improvement
+                  </h3>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <div className="text-center">
+                        <div className="text-lg font-medium text-gray-500 mb-2">Original Score</div>
+                        <div className="text-4xl font-bold text-gray-700 mb-2">{atsAnalysis.originalScore}%</div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          atsAnalysis.originalScore >= 80 ? 'bg-green-100 text-green-800' :
+                          atsAnalysis.originalScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {atsAnalysis.originalScore >= 80 ? 'Excellent' :
+                           atsAnalysis.originalScore >= 60 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                      <div className="text-center">
+                        <div className="text-lg font-medium text-blue-600 mb-2">Optimized Score</div>
+                        <div className="text-4xl font-bold text-blue-700 mb-2">{atsAnalysis.score}%</div>
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          atsAnalysis.score >= 80 ? 'bg-green-100 text-green-800' :
+                          atsAnalysis.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {atsAnalysis.score >= 80 ? 'Excellent' :
+                           atsAnalysis.score >= 60 ? 'Good' : 'Needs Improvement'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Improvement Percentage */}
+                  <div className="mt-4 text-center">
+                    <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      {atsAnalysis.score - atsAnalysis.originalScore}% Improvement
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Resume Preview */}
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">

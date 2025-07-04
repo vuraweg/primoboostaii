@@ -12,18 +12,6 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({ onUpgrad
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    // Check if we're on mobile
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     loadSubscription();
@@ -123,94 +111,6 @@ export const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({ onUpgrad
   const daysLeft = getDaysRemaining(subscription.endDate);
   const usagePercentage = getUsagePercentage();
 
-  // Mobile horizontal layout
-  if (isMobile) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="bg-green-100 w-10 h-10 rounded-full flex items-center justify-center mr-3">
-                <Crown className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">Active Plan</h3>
-                <p className="text-xs text-gray-600">
-                  {paymentService.getPlanById(subscription.planId)?.name}
-                </p>
-              </div>
-            </div>
-            <div className={`flex items-center ${getStatusColor()}`}>
-              {getStatusIcon()}
-              <span className="ml-1 text-sm font-medium">
-                {remaining > 0 ? 'Active' : 'Exhausted'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Horizontal Stats */}
-        <div className="p-4">
-          {/* Stats Row */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-center flex-1">
-              <div className="text-xl font-bold text-gray-900">{remaining}</div>
-              <div className="text-xs text-gray-600">Left</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="text-xl font-bold text-gray-900">{daysLeft}</div>
-              <div className="text-xs text-gray-600">Days</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="text-xl font-bold text-gray-900">{Math.round(usagePercentage)}%</div>
-              <div className="text-xs text-gray-600">Used</div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  usagePercentage > 90 ? 'bg-red-500' :
-                  usagePercentage > 70 ? 'bg-orange-500' :
-                  'bg-green-500'
-                }`}
-                style={{ width: `${Math.min(usagePercentage, 100)}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <button
-            onClick={onUpgrade}
-            className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition-all duration-300 ${
-              remaining === 0
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : remaining < 5
-                ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            {remaining === 0 ? 'Renew Now' : 'Upgrade Plan'}
-          </button>
-
-          {/* Low Usage Warning */}
-          {remaining <= 2 && remaining > 0 && (
-            <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center text-xs text-orange-700">
-                <AlertCircle className="w-3 h-3 text-orange-600 mr-1 flex-shrink-0" />
-                <span>Only {remaining} optimization{remaining !== 1 ? 's' : ''} left</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop layout (unchanged)
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
       {/* Header */}

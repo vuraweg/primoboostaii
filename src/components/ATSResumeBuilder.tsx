@@ -15,6 +15,8 @@ import {
   TrendingUp,
   Eye,
   RefreshCw,
+  BarChart3,
+  ArrowRight
   BarChart3, 
   Award, 
   Zap,
@@ -30,7 +32,7 @@ import { ResumePreview } from './ResumePreview';
 import { ExportButtons } from './ExportButtons';
 import { ResumeData, UserType } from '../types/resume';
 import { optimizeResume } from '../services/geminiService';
-import { getMatchScore } from '../services/scoringService';
+import { analyzeResumeForATS, ATSAnalysisResult } from '../services/atsAnalysisService';
 import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
 import { 
@@ -49,7 +51,11 @@ interface ATSAnalysis {
   score: number;
   missingSections: string[];
   suggestions: string[];
-  strengths: string[];
+interface ATSResumeBuilderProps {
+  onBackToHome?: () => void;
+}
+
+export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome }) => {
   improvements: string[];
   keywordDensity: number;
   formatCompliance: number;
@@ -81,11 +87,11 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
     targetRole: '',
     userType: 'experienced'
   });
-  const [atsAnalysis, setAtsAnalysis] = useState<ATSAnalysis | null>(null);
+  const [atsAnalysis, setAtsAnalysis] = useState<ATSAnalysisResult | null>(null);
   const [optimizedResume, setOptimizedResume] = useState<ResumeData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'upload' | 'analyze' | 'inputs' | 'optimize' | 'result'>('upload');
+  const [currentStep, setCurrentStep] = useState<'upload' | 'analyze' | 'score_display' | 'inputs' | 'optimize' | 'result'>('upload');
   const [documentFormatStatus, setDocumentFormatStatus] = useState<{
     isReadable: boolean;
     hasProperFormatting: boolean;
@@ -105,8 +111,8 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
     setResumeText(text);
     
     // Verify document format
-    const formatStatus = verifyDocumentFormat(text);
-    setDocumentFormatStatus(formatStatus);
+      // Use the actual ATS analysis service
+      const analysis = await analyzeResumeForATS(resumeText, userInputs.targetRole);
     
     if (text.trim()) {
       setCurrentStep('analyze');
@@ -179,7 +185,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       }
       setFormData(newFormData);
       
-      setCurrentStep('inputs');
+      setCurrentStep('score_display');
     } catch (error) {
       console.error('Error analyzing resume:', error);
       alert('Failed to analyze resume. Please try again.');
@@ -206,81 +212,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       return;
     }
 
-    setIsOptimizing(true);
-    try {
-      // Check subscription
-      const canOptimize = await paymentService.canOptimize(user!.id);
-      if (!canOptimize.canOptimize) {
-        alert('You have no remaining optimizations. Please upgrade your subscription.');
-        return;
-      }
-
-      // Create enhanced resume text with form data for missing sections
-      let enhancedResumeText = resumeText;
-      
-      if (formData.summary.trim()) {
-        enhancedResumeText = `PROFESSIONAL SUMMARY:\n${formData.summary}\n\n${enhancedResumeText}`;
-      }
-      
-      if (formData.experience.trim()) {
-        enhancedResumeText = `${enhancedResumeText}\n\nWORK EXPERIENCE:\n${formData.experience}`;
-      }
-      
-      if (formData.education.trim()) {
-        enhancedResumeText = `${enhancedResumeText}\n\nEDUCATION:\n${formData.education}`;
-      }
-      
-      if (formData.skills.trim()) {
-        enhancedResumeText = `${enhancedResumeText}\n\nSKILLS:\n${formData.skills}`;
-      }
-      
-      if (formData.certifications.trim()) {
-        enhancedResumeText = `${enhancedResumeText}\n\nCERTIFICATIONS:\n${formData.certifications}`;
-      }
-      
-      if (formData.additionalDetails.trim()) {
-        enhancedResumeText = `${enhancedResumeText}\n\nADDITIONAL INFORMATION:\n${formData.additionalDetails}`;
-      }
-
-      // Create job description from target role
-      const jobDescription = `Position: ${userInputs.targetRole}\n\nWe are looking for a qualified ${userInputs.targetRole} to join our team. The ideal candidate should have relevant experience and skills in this field.`;
-
-      // Optimize resume
-      const optimized = await optimizeResume(
-        enhancedResumeText,
-        jobDescription,
-        userInputs.userType,
-        userInputs.linkedinUrl,
-        userInputs.githubUrl
-      );
-
-      // Use optimization count
-      await paymentService.useOptimization(user!.id);
-
-      // Get updated ATS score
-      const updatedAnalysis = await analyzeResumeForATS(JSON.stringify(optimized), userInputs.targetRole);
-      setAtsAnalysis({
-        ...updatedAnalysis,
-        originalScore: atsAnalysis?.score || 0
-      });
-
-      setOptimizedResume(optimized);
-      setCurrentStep('result');
-    } catch (error) {
-      console.error('Error optimizing resume:', error);
-      alert('Failed to optimize resume. Please try again.');
-    } finally {
-      setIsOptimizing(false);
-    }
-  };
-
-  const resetBuilder = () => {
-    setResumeText('');
-    setUserInputs({
-      githubUrl: '',
-      linkedinUrl: '',
-      targetRole: '',
-      userType: 'experienced'
     });
     setAtsAnalysis(null);
     setOptimizedResume(null);
@@ -299,6 +230,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const steps = [
     { id: 'upload', label: 'Upload', icon: <Upload className="w-5 h-5" /> },
     { id: 'analyze', label: 'Analyze', icon: <Eye className="w-5 h-5" /> },
+    { id: 'score_display', label: 'Score', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'inputs', label: 'Details', icon: <User className="w-5 h-5" /> },
     { id: 'optimize', label: 'Optimize', icon: <TrendingUp className="w-5 h-5" /> },
     { id: 'result', label: 'Result', icon: <CheckCircle className="w-5 h-5" /> }
@@ -468,7 +400,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
           {/* Step 2: ATS Analysis */}
           {currentStep === 'analyze' && (
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center"> 
                 <Target className="w-6 h-6 mr-2 text-purple-600" />
                 ATS Compatibility Analysis
               </h2>
@@ -676,84 +608,124 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       </h3>
                       <div className="text-center">
                         <div className="text-3xl font-bold text-blue-700 mb-2">{atsAnalysis.keywordDensity}%</div>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          atsAnalysis.keywordDensity >= 5 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {atsAnalysis.keywordDensity >= 5 ? 'Good' : 'Needs Improvement'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-purple-50 rounded-xl p-6 border border-purple-200 h-full">
-                      <h3 className="text-lg font-semibold text-purple-900 mb-3 flex items-center">
-                        <LayoutGrid className="w-5 h-5 mr-2" />
-                        Format Compliance
-                      </h3>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-purple-700 mb-2">{atsAnalysis.formatCompliance}%</div>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          atsAnalysis.formatCompliance >= 80 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {atsAnalysis.formatCompliance >= 80 ? 'Good' : 'Needs Improvement'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-orange-50 rounded-xl p-6 border border-orange-200 h-full">
-                      <h3 className="text-lg font-semibold text-orange-900 mb-3 flex items-center">
-                        <Award className="w-5 h-5 mr-2" />
-                        Section Completeness
-                      </h3>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-orange-700 mb-2">{atsAnalysis.sectionCompleteness}%</div>
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          atsAnalysis.sectionCompleteness >= 80 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {atsAnalysis.sectionCompleteness >= 80 ? 'Good' : 'Needs Improvement'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              )}
+            </div>
+          )}
 
-                  {/* Suggestions */}
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mt-6">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
-                      <Star className="w-5 h-5 mr-2" />
-                      Improvement Suggestions
-                    </h3>
-                    <ul className="space-y-2">
-                      {atsAnalysis.suggestions.map((suggestion, index) => (
-                        <li key={index} className="text-blue-700 text-sm flex items-start">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 mt-2 flex-shrink-0" />
-                          {suggestion}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="flex justify-center mt-8">
-                    <button
-                      onClick={() => setCurrentStep('inputs')}
-                      className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 ${
-                        atsAnalysis.score < 70 ? 'animate-pulse shadow-lg scale-105' : ''
-                      }`}
-                    >
-                      {atsAnalysis.score < 70 ? (
-                        <>
-                          <Zap className="w-5 h-5" />
-                          <span>Optimize Now (Recommended)</span>
-                          <ArrowRight className="w-5 h-5" />
-                        </>
-                      ) : (
-                        <>
-                          <ArrowRight className="w-5 h-5" />
-                          <span>Continue to Optimization</span>
-                        </>
-                      )}
-                    </button>
+          {/* Step 2.5: Score Display */}
+          {currentStep === 'score_display' && atsAnalysis && (
+            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                <BarChart3 className="w-6 h-6 mr-2 text-blue-600" />
+                ATS Compatibility Score
+              </h2>
+              
+              <div className="space-y-6">
+                {/* ATS Score */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 text-center">
+                  <div className="text-5xl font-bold text-gray-900 mb-2">{atsAnalysis.score}%</div>
+                  <div className="text-lg text-gray-600">ATS Compatibility Score</div>
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${
+                    atsAnalysis.score >= 90 ? 'bg-green-100 text-green-800' :
+                    atsAnalysis.score >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {atsAnalysis.score >= 90 ? 'Excellent' :
+                     atsAnalysis.score >= 70 ? 'Good' : 'Needs Improvement'}
                   </div>
                 </div>
-              )}
+
+                {/* Score Message */}
+                <div className={`p-4 rounded-xl ${
+                  atsAnalysis.score >= 90 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-yellow-50 border border-yellow-200'
+                }`}>
+                  <div className="flex items-start">
+                    {atsAnalysis.score >= 90 ? (
+                      <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">
+                        {atsAnalysis.score >= 90 
+                          ? 'Your resume is highly optimized for ATS systems!' 
+                          : 'Your resume needs optimization for ATS systems'}
+                      </h3>
+                      <p className="text-sm text-gray-700">
+                        {atsAnalysis.score >= 90 
+                          ? 'Your resume is well-structured and contains all necessary sections. It should perform well with Applicant Tracking Systems. You can still proceed with optimization if you want to further enhance it.' 
+                          : 'Your resume could benefit from optimization to better pass through Applicant Tracking Systems. We recommend proceeding with our optimization process to improve your chances of getting noticed by recruiters.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* If score is below 90, show why */}
+                {atsAnalysis.score < 90 && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 className="font-semibold text-gray-900 mb-3">Why Your Score Is Low:</h3>
+                    
+                    {atsAnalysis.missingSections.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-red-700 mb-2">Missing Sections:</h4>
+                        <ul className="space-y-1">
+                          {atsAnalysis.missingSections.map((section, index) => (
+                            <li key={index} className="text-sm text-gray-700 flex items-center">
+                              <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-2 flex-shrink-0" />
+                              {section}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h4 className="text-sm font-medium text-orange-700 mb-2">Needed Improvements:</h4>
+                      <ul className="space-y-1">
+                        {atsAnalysis.improvements.slice(0, 3).map((improvement, index) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-center">
+                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mr-2 flex-shrink-0" />
+                            {improvement}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
+                  <button
+                    onClick={() => setCurrentStep('inputs')}
+                    className={`bg-gradient-to-r ${
+                      atsAnalysis.score >= 90 
+                        ? 'from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
+                        : 'from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700'
+                    } text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl ${
+                      atsAnalysis.score < 90 ? 'animate-pulse' : ''
+                    }`}
+                  >
+                    <TrendingUp className="w-5 h-5" />
+                    <span>
+                      {atsAnalysis.score >= 90 
+                        ? 'Proceed to Optimization (Optional)' 
+                        : 'Optimize My Resume'}
+                    </span>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                  
+                  {onBackToHome && (
+                    <button
+                      onClick={onBackToHome}
+                      className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <span>Go Back to Homepage</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

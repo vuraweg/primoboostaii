@@ -94,10 +94,19 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
       setBeforeScore(beforeMatchScore);
 
       // Optimize resume
-      const optimized = await optimizeResume(resumeText, jobDescription, userType, linkedinUrl, githubUrl);
+      const optimized = await optimizeResume(
+        resumeText, 
+        jobDescription, 
+        userType, 
+        linkedinUrl, 
+        githubUrl
+      );
 
       // Generate after score
-      const afterMatchScore = generateAfterScore(JSON.stringify(optimized), beforeMatchScore.score);
+      const afterMatchScore = generateAfterScore(
+        JSON.stringify(optimized), 
+        beforeMatchScore.score
+      );
       setAfterScore(afterMatchScore);
 
       // Determine changed sections (simulate)

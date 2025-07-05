@@ -52,7 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const getTitle = () => {
     switch (currentView) {
       case 'login': return 'Welcome Back';
-      case 'signup': return 'Join Resume Optimizer';
+      case 'signup': return 'Join ATS Resume Builder';
       case 'forgot-password': return 'Reset Password';
       case 'success': return 'Success!';
       default: return 'Authentication';
@@ -82,8 +82,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {getTitle()}
             </h1>
             <p className="text-gray-600 text-sm">
-              {currentView === 'login' && 'Sign in to optimize your resume with AI'}
-              {currentView === 'signup' && 'Create your account and start optimizing'}
+              {currentView === 'login' && 'Sign in to build your ATS-optimized resume'}
+              {currentView === 'signup' && 'Create your account and start building'}
               {currentView === 'forgot-password' && 'We\'ll help you reset your password'}
               {currentView === 'success' && 'Everything is set up perfectly!'}
             </p>

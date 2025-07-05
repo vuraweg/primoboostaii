@@ -27,7 +27,7 @@ import { optimizeResume } from '../services/geminiService';
 import { getMatchScore } from '../services/scoringService';
 import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
-import { analyzeResumeForATS } from '../services/atsAnalysisService';
+import { analyzeResumeForATS, analyzeOptimizedResumeForATS } from '../services/atsAnalysisService';
 
 interface ATSResumeBuilderProps {
   onBackToHome?: () => void;
@@ -257,7 +257,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -720,6 +720,21 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 </div>
 
                 {/* Complete Missing Sections */}
+                {atsAnalysis && atsAnalysis.missingSections.filter(section => 
+                  section !== 'Professional Summary' && 
+                  section !== 'Summary' && 
+                  section !== 'Objective'
+                ).length > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Complete Missing Sections
+                    </h3>
+                    <p className="text-blue-700 text-sm mb-4">
+                      Adding these missing sections will significantly improve your ATS score and increase your chances of getting interviews.
+                    </p>
+                    
+                    <div className="space-y-4">
                       {/* Work Experience */}
                       {atsAnalysis.missingSections.filter(s => s === 'Work Experience').length > 0 && (
                         <div>
@@ -910,8 +925,9 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           atsAnalysis.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {atsAnalysis.score >= 80 ? 'Excellent' :
-                           atsAnalysis.score >= 60 ? 'Good' : 'Needs Improvement'}
+                          {atsAnalysis.score >= 90 ? 'Excellent' : 
+                           atsAnalysis.score >= 80 ? 'Very Good' : 
+                           atsAnalysis.score >= 70 ? 'Good' : 'Improved'}
                         </div>
                       </div>
                     </div>
@@ -965,7 +981,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 <button
                   onClick={() => {
                     if (onBackToHome) {
-                      onBackToHome();
+                      resetBuilder();
                     } else {
                       resetBuilder();
                     }
@@ -973,7 +989,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto shadow-md"
                 >
                   <RefreshCw className="w-5 h-5" />
-                  <span>{onBackToHome ? 'Back to Home' : 'Build Another Resume'}</span>
+                  <span>Build Another Resume</span>
                 </button>
               </div>
             </div>

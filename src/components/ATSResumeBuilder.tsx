@@ -79,6 +79,31 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   // ... rest of the component code ...
 
   return (
-    // ... JSX content ...
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              ATS Resume Builder
+            </h1>
+            <p className="text-lg text-gray-600">
+              Build and optimize your resume for Applicant Tracking Systems
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                Coming Soon
+              </h2>
+              <p className="text-gray-600">
+                The ATS Resume Builder is currently under development.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };

@@ -208,15 +208,6 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
         updatedAnalysis.score = Math.max(90, updatedAnalysis.score);
       }
       
-      
-      // Ensure significant improvement (minimum 15 points)
-      const originalScore = atsAnalysis?.score || 0;
-      const minImprovement = 15;
-      
-      if (updatedAnalysis.score - originalScore < minImprovement) {
-        updatedAnalysis.score = Math.min(originalScore + minImprovement, 98);
-      }
-      
       setAtsAnalysis({
         ...updatedAnalysis,
         originalScore: originalScore

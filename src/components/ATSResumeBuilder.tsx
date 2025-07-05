@@ -277,11 +277,11 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
           <div className="bg-gradient-to-r from-purple-600 to-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Target className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4 leading-tight">
             ATS-Optimized Resume Builder
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Upload your resume, get detailed ATS analysis, and generate an optimized version that passes through Applicant Tracking Systems
+            Build a professional resume that passes through Applicant Tracking Systems and lands you more interviews
           </p>
         </div>
 
@@ -967,7 +967,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   {/* Improvement Details */}
                   <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-5 border border-blue-100">
                     <div className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                      <AlertTriangle className="w-5 h-5 text-red-600 mr-2 mt-1 flex-shrink-0" />
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-1">Key Improvements Made:</h4>
                         <ul className="text-sm text-gray-700 space-y-1">
@@ -989,7 +989,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     Your Optimized Resume
                   </h3>
-                  <p className="text-gray-600">
+                    We've sent a verification link to<br />
                     ATS-friendly format with improved keyword optimization
                   </p>
                 </div>

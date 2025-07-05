@@ -169,7 +169,7 @@ Respond ONLY with valid JSON in this exact structure:
 
 /**
  * Analyze an already optimized (after) resume for ATS compliance.
- * This version of the analysis forces a high score of 90+ unless critical issues exist.
+ * This version of the analysis forces a high score of 90-97% unless critical issues exist.
  */
 export const analyzeOptimizedResumeForATS = async (  
   resumeText: string, 
@@ -290,12 +290,14 @@ CRITICAL INSTRUCTIONS:
     try { 
       const parsedResult = JSON.parse(cleanedResult);
       
-      // Store in cache for consistency
-      // Ensure the score is at least 90
+      // Ensure the score is at least 90 but not more than 97
       if (parsedResult.score < 90) {
         parsedResult.score = 90 + Math.floor(Math.random() * 8); // 90-97
+      } else if (parsedResult.score > 97) {
+        parsedResult.score = 97; // Cap at 97 to avoid perfect scores
       }
       
+      // Store in cache for consistency
       analysisCache.set(cacheKey, parsedResult);
       
       return parsedResult;

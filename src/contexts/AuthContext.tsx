@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const getInitialSession = async () => {
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Initial load timeout')), 8000)
+          setTimeout(() => reject(new Error('Initial load timeout')), 15000)
         );
 
         const userPromise = authService.getCurrentUser();

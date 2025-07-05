@@ -989,7 +989,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     Your Optimized Resume
                   </h3>
-                    We've sent a verification link to<br />
+                  <p className="text-gray-600">
                     ATS-friendly format with improved keyword optimization
                   </p>
                 </div>

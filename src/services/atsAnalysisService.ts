@@ -3,7 +3,7 @@ import { ResumeData } from '../types/resume';
 const GEMINI_API_KEY = 'AIzaSyAYxmudWmbhrzaFTg2btswt6V2QHiAR_BE';
 
 // Cache for storing analysis results to ensure consistency
-const analysisCache = new Map<string, ATSAnalysisResult>();
+let analysisCache = new Map<string, ATSAnalysisResult>();
 
 export interface ATSAnalysisResult {
   score: number;
@@ -18,7 +18,7 @@ export interface ATSAnalysisResult {
 
 export const analyzeResumeForATS = async (resumeText: string, targetRole?: string): Promise<ATSAnalysisResult> => {
   // Generate a cache key based on resume text and target role
-  const cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
+  let cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
   // Check if we already have an analysis for this resume
   if (analysisCache.has(cacheKey)) {
@@ -161,7 +161,7 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
   const suggestions: string[] = [];
 
   // Filter out Summary/Objective from missing sections
-  const filteredMissingSections = missingSections.filter(
+  let filteredMissingSections = missingSections.filter(
     section => section !== 'Professional Summary' && 
     section !== 'Summary' && 
     section !== 'Objective'
@@ -207,8 +207,7 @@ export const calculateATSScore = (resumeText: string): number => {
     experience: /(?:experience|work|employment)/i.test(resumeText) ? 10 : 0,
     education: /(?:education|degree|university)/i.test(resumeText) ? 8 : 0,
     skills: /(?:skills|technologies|technical)/i.test(resumeText) ? 10 : 0,
-    // Summary is optional, so always award these points
-    summary: 4
+    summary: 4 // Summary is optional, so always award these points
   };
   
   score += Object.values(sections).reduce((sum, points) => sum + points, 0);

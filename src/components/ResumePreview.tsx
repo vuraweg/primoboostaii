@@ -79,7 +79,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
   // Define section order based on user type
   const getSectionOrder = () => {
     if (userType === 'experienced') {
-      return [ 
+      return [
         'summary',
         'workExperience',
         'projects',
@@ -88,8 +88,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
         'education' // Minimal for experienced
       ];
     } else {
-      return [ 
-        'summary', // Optional for freshers
+      return [
+        // 'summary', // Removed for freshers as requested
         'education', // Prominent for freshers
         'workExperience', // Internships
         'projects', // Academic projects
@@ -108,14 +108,15 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
   const renderSection = (sectionName: string) => {
     switch (sectionName) {
       case 'summary':
-        if (!resumeData.summary || userType === 'fresher') return null; // Skip summary for freshers
+        // Skip summary for freshers completely
+        if (!resumeData.summary || userType === 'fresher') return null;
         return (
           <div className="mb-6" style={{ marginBottom: '18pt' }}>
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               PROFESSIONAL SUMMARY
@@ -142,8 +143,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               {userType === 'fresher' ? 'INTERNSHIPS & WORK EXPERIENCE' : 'WORK EXPERIENCE'}
@@ -209,8 +210,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: showEducationProminently ? '14pt' : '12pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               EDUCATION
@@ -259,8 +260,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               {userType === 'fresher' ? 'ACADEMIC PROJECTS' : 'PROJECTS'}
@@ -307,8 +308,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               TECHNICAL SKILLS
@@ -340,8 +341,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               ACHIEVEMENTS
@@ -373,8 +374,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               EXTRA-CURRICULAR ACTIVITIES
@@ -406,8 +407,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               CERTIFICATIONS
@@ -458,8 +459,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               LANGUAGES KNOWN
@@ -486,8 +487,8 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 
               fontSize: '14pt', 
               fontWeight: 'bold', 
-              marginBottom: '6pt',
-              marginTop: '6pt',
+              marginBottom: '6pt', 
+              marginTop: '6pt', 
               fontFamily: 'Calibri, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif'
             }}>
               PERSONAL DETAILS

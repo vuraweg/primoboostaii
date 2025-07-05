@@ -22,7 +22,7 @@ export interface ATSAnalysisResult {
 export const analyzeResumeForATS = async (  
   resumeText: string, 
   targetRole?: string
-): Promise<ATSAnalysisResult> => {
+): Promise<ATSAnalysisResult> => { 
   // Generate a cache key based on resume text and target role
   let cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
@@ -74,8 +74,8 @@ CRITICAL INSTRUCTIONS:
 
 Respond ONLY with valid JSON in this exact structure:
 
-{
-  "score": 0-85,
+{ 
+  "score": 0-85, 
   "missingSections": ["section1", "section2"],
   "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
   "strengths": ["strength1", "strength2", "strength3"],
@@ -148,6 +148,11 @@ Respond ONLY with valid JSON in this exact structure:
       const parsedResult = JSON.parse(cleanedResult);
       
       // Store in cache for consistency
+      // Cap the score at 85 to ensure there's room for improvement
+      if (parsedResult.score > 85) {
+        parsedResult.score = 85;
+      }
+      
       analysisCache.set(cacheKey, parsedResult);
       
       return parsedResult;
@@ -169,7 +174,7 @@ Respond ONLY with valid JSON in this exact structure:
 export const analyzeOptimizedResumeForATS = async (  
   resumeText: string, 
   targetRole?: string
-): Promise<ATSAnalysisResult> => {
+): Promise<ATSAnalysisResult> => { 
   // Generate a cache key that differentiates optimized resumes
   let cacheKey = `optimized|${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
@@ -212,8 +217,8 @@ CRITICAL INSTRUCTIONS:
 - Be specific, actionable, and measure improvements.
 - Respond ONLY with valid JSON in the exact structure below:
 
-{
-  "score": 90-100,
+{ 
+  "score": 90-100, 
   "missingSections": [],
   "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
   "strengths": ["strength1", "strength2", "strength3"],
@@ -286,6 +291,11 @@ CRITICAL INSTRUCTIONS:
       const parsedResult = JSON.parse(cleanedResult);
       
       // Store in cache for consistency
+      // Ensure the score is at least 90
+      if (parsedResult.score < 90) {
+        parsedResult.score = 90 + Math.floor(Math.random() * 8); // 90-97
+      }
+      
       analysisCache.set(cacheKey, parsedResult);
       
       return parsedResult;
@@ -360,7 +370,7 @@ export const calculateATSScore = (resumeText: string): number => {
   const wordCount = resumeText.split(/\s+/).length;
   const technicalTerms = resumeText.match(/(?:javascript|python|react|node|sql|aws|docker|kubernetes|agile|scrum)/gi);
   const keywordDensity = technicalTerms ? (technicalTerms.length / wordCount) * 100 : 0;
-  score += Math.min(keywordDensity * 4, 20);
+  score += Math.min(keywordDensity * 4, 20); 
   
   // Check for quantifiable achievements (20 points)
   const numbers = resumeText.match(/\d+(?:%|\+|k|million|billion|years?|months?)/gi);
@@ -372,5 +382,6 @@ export const calculateATSScore = (resumeText: string): number => {
   const verbScore = actionVerbs ? Math.min(actionVerbs.length, 20) : 0;
   score += verbScore;
   
-  return Math.min(Math.round(score), 85); // Cap initial score at 85 to ensure room for improvement
+  // Cap initial score at 85 to ensure room for improvement
+  return Math.min(Math.round(score), 85);
 };

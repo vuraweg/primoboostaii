@@ -389,9 +389,16 @@ export const generateBeforeScore = (resumeText: string): MatchScore => {
 };
 
 // Generate a high score for "after" optimization to show significant improvement
-export const generateAfterScore = (resumeText: string): MatchScore => {
-  // Simulate a high score (90-98%) for after optimization
-  const baseScore = Math.floor(Math.random() * 9) + 90; // 90-98%
+export const generateAfterScore = (resumeText: string, beforeScore: number): MatchScore => {
+  // Ensure the after score is always higher than the before score
+  // Add a minimum improvement of 15-25 points
+  const minImprovement = Math.floor(Math.random() * 11) + 15; // 15-25 points
+  
+  // Calculate the new score, ensuring it's higher than before but not over 100
+  const newScore = Math.min(beforeScore + minImprovement, 98);
+  
+  // Ensure the score is at least 90 (if the improvement would make it less than 90)
+  const baseScore = Math.max(newScore, 90);
   
   return {
     score: baseScore,

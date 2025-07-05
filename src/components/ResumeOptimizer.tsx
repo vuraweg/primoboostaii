@@ -97,7 +97,7 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
       const optimized = await optimizeResume(resumeText, jobDescription, userType, linkedinUrl, githubUrl);
 
       // Generate after score
-      const afterMatchScore = generateAfterScore(JSON.stringify(optimized));
+      const afterMatchScore = generateAfterScore(JSON.stringify(optimized), beforeMatchScore.score);
       setAfterScore(afterMatchScore);
 
       // Determine changed sections (simulate)
@@ -374,6 +374,41 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
             )}
 
             <div className="grid lg:grid-cols-2 gap-8">
+              {/* Optimize Button - Moved to top */}
+              <div className="lg:col-span-2 text-center mb-6">
+                {!isAuthenticated ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 max-w-xl mx-auto">
+                    <div className="flex items-center justify-center space-x-2 text-yellow-800">
+                      <Lock className="w-5 h-5" />
+                      <span className="font-medium">Sign in required to optimize resume</span>
+                    </div>
+                  </div>
+                ) : null}
+                
+                <button
+                  onClick={handleOptimize}
+                  disabled={!resumeText.trim() || !jobDescription.trim() || isOptimizing}
+                  className={`w-full max-w-md mx-auto py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-3 ${
+                    !resumeText.trim() || !jobDescription.trim() || isOptimizing
+                      ? 'bg-gray-400 cursor-not-allowed text-white'
+                      : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105'
+                  }`}
+                >
+                  {isOptimizing ? (
+                    <>
+                      <RefreshCw className="w-6 h-6 animate-spin" />
+                      <span>Optimizing Resume...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-6 h-6" />
+                      <span>Optimize My Resume</span>
+                      <TrendingUp className="w-6 h-6" />
+                    </>
+                  )}
+                </button>
+              </div>
+              
               {/* Input Form */}
               <div className="space-y-6">
                 {!analysisData && (
@@ -464,41 +499,6 @@ const ResumeOptimizer: React.FC<ResumeOptimizerProps> = ({ onPageChange }) => {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Optimize Button */}
-                <div className="text-center">
-                  {!isAuthenticated ? (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-                      <div className="flex items-center justify-center space-x-2 text-yellow-800">
-                        <Lock className="w-5 h-5" />
-                        <span className="font-medium">Sign in required to optimize resume</span>
-                      </div>
-                    </div>
-                  ) : null}
-                  
-                  <button
-                    onClick={handleOptimize}
-                    disabled={!resumeText.trim() || !jobDescription.trim() || isOptimizing}
-                    className={`w-full max-w-md mx-auto py-4 px-8 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center space-x-3 ${
-                      !resumeText.trim() || !jobDescription.trim() || isOptimizing
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : 'bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-xl hover:shadow-2xl transform hover:scale-105'
-                    }`}
-                  >
-                    {isOptimizing ? (
-                      <>
-                        <RefreshCw className="w-6 h-6 animate-spin" />
-                        <span>Optimizing Resume...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-6 h-6" />
-                        <span>Optimize My Resume</span>
-                        <TrendingUp className="w-6 h-6" />
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
 

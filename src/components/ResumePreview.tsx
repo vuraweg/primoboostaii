@@ -79,7 +79,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
   // Define section order based on user type
   const getSectionOrder = () => {
     if (userType === 'experienced') {
-      return [
+      return [ 
         'summary',
         'workExperience',
         'projects',
@@ -88,7 +88,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
         'education' // Minimal for experienced
       ];
     } else {
-      return [
+      return [ 
         'summary', // Optional for freshers
         'education', // Prominent for freshers
         'workExperience', // Internships
@@ -108,7 +108,7 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData, userTy
   const renderSection = (sectionName: string) => {
     switch (sectionName) {
       case 'summary':
-        if (!resumeData.summary) return null;
+        if (!resumeData.summary || userType === 'fresher') return null; // Skip summary for freshers
         return (
           <div className="mb-6" style={{ marginBottom: '18pt' }}>
             <h2 className="font-bold mb-2 uppercase tracking-wide" style={{ 

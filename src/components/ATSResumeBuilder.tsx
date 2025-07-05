@@ -27,7 +27,7 @@ import { optimizeResume } from '../services/geminiService';
 import { getMatchScore } from '../services/scoringService';
 import { useAuth } from '../contexts/AuthContext';
 import { paymentService } from '../services/paymentService';
-import { analyzeResumeForATS, analyzeOptimizedResumeForATS } from '../services/atsAnalysisService';
+import { analyzeResumeForATS, analyzeOptimizedResumeForATS, calculateATSScore } from '../services/atsAnalysisService';
 
 interface ATSResumeBuilderProps {
   onBackToHome?: () => void;
@@ -67,6 +67,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'analyze' | 'inputs' | 'optimize' | 'result'>('upload');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [initialScore, setInitialScore] = useState<number>(0);
   const [formData, setFormData] = useState({
     summary: '',
     experience: '',
@@ -79,6 +80,9 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const handleFileUpload = (text: string) => {
     setResumeText(text);
     if (text.trim()) {
+      // Calculate initial score to determine if analysis is needed
+      const score = calculateATSScore(text);
+      setInitialScore(score);
       setCurrentStep('analyze');
     }
   };
@@ -91,6 +95,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       // Analyze resume for ATS compliance and missing sections
       const analysis = await analyzeResumeForATS(resumeText, userInputs.targetRole);
       setAtsAnalysis(analysis);
+      
       // Store the original score for comparison after optimization
       analysis.originalScore = analysis.score;      
       // Pre-fill form data based on missing sections
@@ -112,7 +117,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       }
       setFormData(newFormData);
       setCurrentStep('inputs');
-      setCurrentStep('inputs');
+      
     } catch (error) {
       console.error('Error analyzing resume:', error);
       alert('Failed to analyze resume. Please try again.');
@@ -193,7 +198,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       // Get updated ATS score
       // Use the optimized analysis function that guarantees 90+ score
       const updatedAnalysis = await analyzeOptimizedResumeForATS(JSON.stringify(optimized), userInputs.targetRole);
-      
+
       // Ensure significant improvement (minimum 25 points)
       const originalScore = atsAnalysis?.score || 0;
       const minImprovement = 25;
@@ -202,7 +207,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       if (updatedAnalysis.score - originalScore < minImprovement) {
         updatedAnalysis.score = Math.min(originalScore + minImprovement, 98);
       }
-      
+
       // Ensure final score is at least 90
       if (updatedAnalysis.score < 90) {
         updatedAnalysis.score = Math.max(90, updatedAnalysis.score);
@@ -210,7 +215,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       
       setAtsAnalysis({
         ...updatedAnalysis,
-        originalScore: originalScore
+        originalScore
       });
 
       setOptimizedResume(optimized);
@@ -257,7 +262,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-6 px-4">
       <div className="container mx-auto px-4 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -265,7 +270,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
             <Target className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-            ATS Resume Builder
+            ATS-Optimized Resume Builder
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Upload your resume, get detailed ATS analysis, and generate an optimized version that passes through Applicant Tracking Systems
@@ -417,6 +422,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 text-center">
                     <div className="text-4xl font-bold text-gray-900 mb-2">{Math.round(atsAnalysis.score)}%</div>
                     <div className="text-lg text-gray-600">ATS Compatibility Score</div>
+                    {initialScore > 0 && <div className="text-sm text-gray-500 mt-1">Initial Score: {initialScore}%</div>}
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mt-2 ${
                       atsAnalysis.score >= 80 ? 'bg-green-100 text-green-800' :
                       atsAnalysis.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
@@ -424,7 +430,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     }`}>
                       {atsAnalysis.score >= 80 ? 'Excellent' :
                        atsAnalysis.score >= 60 ? 'Good' : 'Needs Improvement'}
-                    </div>
+                     </div>
                     
                     {/* Score Explanation - Only show if score is below 90 */}
                     {atsAnalysis.score < 90 && (
@@ -433,7 +439,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
                           <div>
                             <h3 className="font-semibold text-yellow-800 mb-1">Why Your Resume Needs Optimization</h3>
-                            <p className="text-yellow-700 text-sm">
+                            <p className="text-yellow-700 text-sm leading-relaxed">
                               Your resume scored {Math.round(atsAnalysis.score)}%, which means it may not pass through Applicant Tracking Systems effectively.
                               {atsAnalysis.score < 70 ? ' This significantly reduces your chances of getting interviews.' : ' This could reduce your chances of getting interviews.'}
                             </p>
@@ -441,7 +447,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                               <span className="text-xs font-medium text-yellow-800">Key issues to address:</span>
                               <ul className="mt-1 text-xs text-yellow-700 space-y-1">
                                 {atsAnalysis.missingSections.filter(section => 
-                                  section !== 'Professional Summary' && 
+                                  section !== 'Professional Summary' &&
                                   section !== 'Summary' && 
                                   section !== 'Objective'
                                 ).length > 0 && (
@@ -449,7 +455,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                                     section !== 'Professional Summary' && 
                                     section !== 'Summary' && 
                                     section !== 'Objective'
-                                  ).join(', ')}</li>
+                                  ).join(', ') || 'None'}</li>
                                 )}
                                 {atsAnalysis.keywordDensity < 5 && (
                                   <li>• Low keyword density ({atsAnalysis.keywordDensity}%)</li>
@@ -473,7 +479,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                         <div className="flex items-start space-x-2">
                           <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                           <div>
-                            <h3 className="font-semibold text-green-800 mb-1">Your Resume Is ATS-Optimized</h3>
+                            <h3 className="font-semibold text-green-800 mb-1">Your Resume Is Already ATS-Optimized</h3>
                             <p className="text-green-700 text-sm">
                               Congratulations! Your resume scored {Math.round(atsAnalysis.score)}%, which means it's already well-optimized for ATS systems. 
                               While optimization isn't strictly necessary, you can still proceed to make minor improvements.
@@ -485,7 +491,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
-                    {/* Missing Sections */}
+                    {/* Missing Sections - Only show if there are missing sections */}
                     {atsAnalysis.missingSections.filter(section => 
                       section !== 'Professional Summary' && 
                       section !== 'Summary' && 
@@ -495,7 +501,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                         <h3 className="text-lg font-semibold text-red-900 mb-3 flex items-center">
                           <AlertTriangle className="w-5 h-5 mr-2" />
                           Missing Sections
-                        </h3>
+                         </h3>
                         <ul className="space-y-2">
                           {atsAnalysis.missingSections
                             .filter(section => 
@@ -504,8 +510,8 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                               section !== 'Objective'
                             )
                             .map((section, index) => (
-                            <li key={index} className="text-red-700 text-sm flex items-center">
-                              <div className="w-2 h-2 bg-red-500 rounded-full mr-2" />
+                            <li key={index} className="text-red-700 text-sm flex items-start">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mr-2 mt-1.5 flex-shrink-0" />
                               {section}
                             </li>
                           ))}
@@ -518,7 +524,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       <h3 className="text-lg font-semibold text-green-900 mb-3 flex items-center">
                         <CheckCircle className="w-5 h-5 mr-2" />
                         Strengths
-                      </h3>
+                         </h3>
                       <ul className="space-y-2">
                         {atsAnalysis.strengths.map((strength, index) => (
                           <li key={index} className="text-green-700 text-sm flex items-center">
@@ -535,7 +541,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                       <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
                         <BarChart3 className="w-5 h-5 mr-2" />
-                        Keyword Density
+                        Keyword Analysis
                       </h3>
                       <div className="text-center">
                         <div className="text-3xl font-bold text-blue-700 mb-2">{atsAnalysis.keywordDensity}%</div>
@@ -550,7 +556,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
                       <h3 className="text-lg font-semibold text-purple-900 mb-3 flex items-center">
                         <FileText className="w-5 h-5 mr-2" />
-                        Format Compliance
+                        ATS Format
                       </h3>
                       <div className="text-center">
                         <div className="text-3xl font-bold text-purple-700 mb-2">{atsAnalysis.formatCompliance}%</div>
@@ -565,7 +571,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <div className="bg-orange-50 rounded-xl p-6 border border-orange-200">
                       <h3 className="text-lg font-semibold text-orange-900 mb-3 flex items-center">
                         <Award className="w-5 h-5 mr-2" />
-                        Section Completeness
+                        Content Quality
                       </h3>
                       <div className="text-center">
                         <div className="text-3xl font-bold text-orange-700 mb-2">{atsAnalysis.sectionCompleteness}%</div>
@@ -583,7 +589,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
                       <Star className="w-5 h-5 mr-2" />
                       Improvement Suggestions
-                    </h3>
+                       </h3>
                     <ul className="space-y-2">
                       {atsAnalysis.suggestions.map((suggestion, index) => (
                         <li key={index} className="text-blue-700 text-sm flex items-start">
@@ -598,7 +604,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <div className="space-y-4">
                       {/* Conditional message based on score */}
                       {atsAnalysis.score >= 90 ? (
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 max-w-lg">
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4 max-w-lg mx-auto">
                           <div className="flex items-start">
                             <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div>
@@ -611,7 +617,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           </div>
                         </div>
                       ) : atsAnalysis.score >= 70 ? (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 max-w-lg">
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 max-w-lg mx-auto">
                           <div className="flex items-start">
                             <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div>
@@ -624,7 +630,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           </div>
                         </div>
                       ) : (
-                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 max-w-lg">
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 max-w-lg mx-auto">
                           <div className="flex items-start">
                             <AlertTriangle className="w-5 h-5 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
                             <div>
@@ -638,7 +644,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                         </div>
                       )}
                       
-                      <button
+                      <button 
                         onClick={() => setCurrentStep('inputs')}
                         className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors ${
                           atsAnalysis.score < 70 ? 'animate-pulse shadow-lg' : ''
@@ -646,7 +652,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       >
                         {atsAnalysis.score < 70 ? (
                           <span className="flex items-center">
-                            <Zap className="w-5 h-5 mr-2" />
+                            <Zap className="w-5 h-5 mr-2 flex-shrink-0" />
                             Optimize Now (Recommended)
                           </span>
                         ) : atsAnalysis.score >= 90 ? (
@@ -667,7 +673,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
             <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
                 <User className="w-6 h-6 mr-2 text-green-600" />
-                Additional Details
+                Complete Your Resume
               </h2>
               
               <div className="space-y-6">
@@ -693,7 +699,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Experience Level
                   </label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
                       onClick={() => setUserInputs(prev => ({ ...prev, userType: 'fresher' }))}
                       className={`p-4 rounded-xl border-2 transition-colors ${
@@ -701,7 +707,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           ? 'border-green-500 bg-green-50 text-green-700'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                    >
+                     >
                       <div className="font-semibold">Fresher/New Graduate</div>
                       <div className="text-sm text-gray-600">0-2 years experience</div>
                     </button>
@@ -712,7 +718,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           ? 'border-green-500 bg-green-50 text-green-700'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                    >
+                     >
                       <div className="font-semibold">Experienced Professional</div>
                       <div className="text-sm text-gray-600">2+ years experience</div>
                     </button>
@@ -720,7 +726,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 </div>
 
                 {/* Complete Missing Sections */}
-                {atsAnalysis && atsAnalysis.missingSections.filter(section => 
+                {atsAnalysis && atsAnalysis.missingSections && atsAnalysis.missingSections.filter(section => 
                   section !== 'Professional Summary' && 
                   section !== 'Summary' && 
                   section !== 'Objective'
@@ -728,9 +734,9 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                     <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
                       <FileText className="w-5 h-5 mr-2" />
-                      Complete Missing Sections
+                      Add Missing Sections
                     </h3>
-                    <p className="text-blue-700 text-sm mb-4">
+                    <p className="text-blue-700 text-sm mb-4 leading-relaxed">
                       Adding these missing sections will significantly improve your ATS score and increase your chances of getting interviews.
                     </p>
                     
@@ -739,7 +745,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       {atsAnalysis.missingSections.filter(s => s === 'Work Experience').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Work Experience
+                            Work Experience <span className="text-red-500">*</span>
                           </label>
                           <textarea
                             value={formData.experience}
@@ -754,7 +760,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       {atsAnalysis.missingSections.filter(s => s === 'Education').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Education
+                            Education <span className="text-red-500">*</span>
                           </label>
                           <textarea
                             value={formData.education}
@@ -769,7 +775,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       {atsAnalysis.missingSections.filter(s => s === 'Technical Skills').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Technical Skills
+                            Technical Skills <span className="text-red-500">*</span>
                           </label>
                           <textarea
                             value={formData.skills}
@@ -784,7 +790,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       {atsAnalysis.missingSections.filter(s => s === 'Certifications').length > 0 && (
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Certifications
+                            Certifications <span className="text-red-500">*</span>
                           </label>
                           <textarea
                             value={formData.certifications}
@@ -798,7 +804,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       {/* Additional Details */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Additional Details (Optional)
+                          Additional Information (Optional)
                           <span className="ml-2 text-xs text-gray-500">Any other information you'd like to include</span>
                         </label>
                         <textarea
@@ -806,7 +812,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           onChange={(e) => handleInputChange('additionalDetails', e.target.value)}
                           placeholder="Any other information you'd like to include (projects, achievements, languages, etc.)..."
                           className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
-                        />
+                         />
                       </div>
                     </div>
                   </div>
@@ -814,7 +820,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
 
                 {/* LinkedIn URL */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                     LinkedIn Profile (Optional)
                   </label>
                   <div className="relative">
@@ -831,7 +837,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
 
                 {/* GitHub URL */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
                     GitHub Profile (Optional)
                   </label>
                   <div className="relative">
@@ -848,7 +854,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
 
                 <div className="flex justify-center">
                   <button
-                    onClick={handleOptimize}
+                    onClick={handleOptimize} 
                     disabled={!userInputs.targetRole.trim() || isOptimizing || (atsAnalysis?.missingSections.length > 0 && Object.values(formData).every(val => !val.trim()))}
                     className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 shadow-lg"
                   >
@@ -859,7 +865,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       </>
                     ) : (
                       atsAnalysis?.missingSections.length > 0 ? (
-                        <>
+                        <> 
                           <TrendingUp className="w-5 h-5" />
                           <span>Generate ATS-Optimized Resume</span>
                         </>
@@ -880,7 +886,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
           {currentStep === 'result' && optimizedResume && (
             <div className="space-y-6">
               {/* Success Message */}
-              <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center shadow-md">
                 <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-green-900 mb-2">
                   ATS-Optimized Resume Generated!
@@ -892,7 +898,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
 
               {/* Score Improvement */}
               {atsAnalysis && 'originalScore' in atsAnalysis && (
-                <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                   <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                     <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
                     ATS Score Improvement
@@ -900,7 +906,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   
                   <div className="grid md:grid-cols-2 gap-8">
                     <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 relative">
-                      <div className="absolute -top-3 -left-3 bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full">BEFORE</div>
+                      <div className="absolute -top-3 -left-3 bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">BEFORE</div>
                       <div className="text-center">
                         <div className="text-lg font-medium text-gray-500 mb-2">Original Score</div>
                         <div className="text-4xl font-bold text-gray-700 mb-2">{Math.round(atsAnalysis.originalScore || 0)}%</div>
@@ -916,7 +922,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     </div>
                     
                     <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 relative">
-                      <div className="absolute -top-3 -left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">AFTER</div>
+                      <div className="absolute -top-3 -left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">AFTER</div>
                       <div className="text-center">
                         <div className="text-lg font-medium text-blue-600 mb-2">Optimized Score</div>
                         <div className="text-4xl font-bold text-blue-700 mb-2">{Math.round(atsAnalysis.score)}%</div>
@@ -934,15 +940,15 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   </div>
                   
                   {/* Improvement Percentage */}
-                  <div className="mt-6 text-center">
+                  <div className="mt-8 text-center">
                     <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold shadow">
                       <TrendingUp className="w-4 h-4 mr-2" />
-                      <span className="text-lg">+{Math.round(atsAnalysis.score - (atsAnalysis.originalScore || 0))}% Improvement</span>
+                      <span className="text-lg">+{Math.round((atsAnalysis.score || 0) - (atsAnalysis.originalScore || 0))}% Improvement</span>
                     </div>
                   </div>
                   
                   {/* Improvement Details */}
-                  <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-4 border border-blue-100">
+                  <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-5 border border-blue-100">
                     <div className="flex items-start">
                       <CheckCircle className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                       <div>
@@ -961,7 +967,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
               )}
 
               {/* Resume Preview */}
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 transition-all hover:shadow-xl">
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     Your Optimized Resume
@@ -982,7 +988,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   onClick={() => {
                     if (onBackToHome) {
                       resetBuilder();
-                    } else {
+                     } else {
                       resetBuilder();
                     }
                   }}
@@ -990,7 +996,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 >
                   <RefreshCw className="w-5 h-5" />
                   <span>Build Another Resume</span>
-                </button>
+                 </button>
               </div>
             </div>
           )}

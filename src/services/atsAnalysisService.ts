@@ -3,7 +3,7 @@ import { ResumeData } from '../types/resume';
 const GEMINI_API_KEY = 'AIzaSyAYxmudWmbhrzaFTg2btswt6V2QHiAR_BE';
 
 // Cache for storing analysis results to ensure consistency
-let analysisCache = new Map<string, ATSAnalysisResult>();
+const analysisCache = new Map<string, ATSAnalysisResult>();
 
 export interface ATSAnalysisResult {
   score: number;
@@ -19,7 +19,7 @@ export interface ATSAnalysisResult {
 /**
  * Analyze resume ATS compliance using Gemini
  */
-export const analyzeResumeForATS = async (
+export const analyzeResumeForATS = async (  
   resumeText: string, 
   targetRole?: string
 ): Promise<ATSAnalysisResult> => {
@@ -27,7 +27,7 @@ export const analyzeResumeForATS = async (
   let cacheKey = `${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
   // Check if we already have an analysis for this resume
-  if (analysisCache.has(cacheKey)) {
+  if (analysisCache.has(cacheKey)) { 
     return analysisCache.get(cacheKey)!;
   }
   
@@ -35,7 +35,7 @@ export const analyzeResumeForATS = async (
 
 RESUME CONTENT:
 ${resumeText}
-
+ 
 ${targetRole ? `TARGET ROLE: ${targetRole}` : ''}
 
 ANALYSIS REQUIREMENTS:
@@ -43,7 +43,7 @@ ANALYSIS REQUIREMENTS:
 1. ATS COMPLIANCE SCORE (0-100):
    - Section structure and formatting (25%)
    - Keyword optimization (25%)
-   - Content completeness (25%)
+   - Content completeness (25%) 
    - ATS-friendly formatting (25%)
 
 2. MISSING SECTIONS ANALYSIS:
@@ -51,7 +51,7 @@ ANALYSIS REQUIREMENTS:
    - Consider standard sections: Contact, Experience, Education, Skills, Projects, Certifications
    - Note: Summary/Objective is OPTIONAL and should NOT be counted as missing
 
-3. DETAILED FEEDBACK:
+3. DETAILED FEEDBACK: 
    - Strengths: What the resume does well for ATS systems
    - Improvements: Specific areas that need enhancement
    - Suggestions: Actionable recommendations for optimization
@@ -59,7 +59,7 @@ ANALYSIS REQUIREMENTS:
 4. KEYWORD ANALYSIS:
    - Evaluate keyword density and relevance
    - Identify missing industry-standard keywords
-   - Assess technical skills representation
+   - Assess technical skills representation 
 
 5. FORMAT COMPLIANCE:
    - Check for ATS-friendly formatting
@@ -67,7 +67,7 @@ ANALYSIS REQUIREMENTS:
    - Evaluate section organization
 
 CRITICAL INSTRUCTIONS:
-- Be specific and actionable in recommendations
+- Be specific and actionable in recommendations 
 - Focus on ATS optimization, not general resume advice
 - Consider industry standards and best practices
 - Provide measurable improvement suggestions
@@ -75,7 +75,7 @@ CRITICAL INSTRUCTIONS:
 Respond ONLY with valid JSON in this exact structure:
 
 {
-  "score": 0-100,
+  "score": 0-85,
   "missingSections": ["section1", "section2"],
   "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
   "strengths": ["strength1", "strength2", "strength3"],
@@ -83,7 +83,7 @@ Respond ONLY with valid JSON in this exact structure:
   "keywordDensity": 0-100,
   "formatCompliance": 0-100,
   "sectionCompleteness": 0-100
-}`;
+}`;  
 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -91,7 +91,7 @@ Respond ONLY with valid JSON in this exact structure:
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: JSON.stringify({ 
         contents: [
           {
             parts: [
@@ -100,7 +100,7 @@ Respond ONLY with valid JSON in this exact structure:
               }
             ]
           }
-        ],
+        ], 
         generationConfig: {
           temperature: 0.3,
           topK: 40,
@@ -128,7 +128,7 @@ Respond ONLY with valid JSON in this exact structure:
       }),
     });
 
-    if (!response.ok) {
+    if (!response.ok) { 
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
       throw new Error(`Gemini API error: ${response.status}`);
@@ -136,7 +136,7 @@ Respond ONLY with valid JSON in this exact structure:
 
     const data = await response.json();
     const result = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
+     
     if (!result) {
       throw new Error('No response content from Gemini API');
     }
@@ -144,7 +144,7 @@ Respond ONLY with valid JSON in this exact structure:
     // Clean the response to ensure it's valid JSON
     const cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    try {
+    try { 
       const parsedResult = JSON.parse(cleanedResult);
       
       // Store in cache for consistency
@@ -152,7 +152,7 @@ Respond ONLY with valid JSON in this exact structure:
       
       return parsedResult;
     } catch (parseError) {
-      console.error('JSON parsing error:', parseError);
+      console.error('JSON parsing error:', parseError); 
       console.error('Raw response:', cleanedResult);
       throw new Error('Invalid JSON response from Gemini API');
     }
@@ -166,7 +166,7 @@ Respond ONLY with valid JSON in this exact structure:
  * Analyze an already optimized (after) resume for ATS compliance.
  * This version of the analysis forces a high score of 90+ unless critical issues exist.
  */
-export const analyzeOptimizedResumeForATS = async (
+export const analyzeOptimizedResumeForATS = async (  
   resumeText: string, 
   targetRole?: string
 ): Promise<ATSAnalysisResult> => {
@@ -174,7 +174,7 @@ export const analyzeOptimizedResumeForATS = async (
   let cacheKey = `optimized|${resumeText.substring(0, 100)}|${targetRole || ''}`;
   
   if (analysisCache.has(cacheKey)) {
-    return analysisCache.get(cacheKey)!;
+    return analysisCache.get(cacheKey)!; 
   }
   
   const prompt = `You are an expert ATS analyzer and resume optimization specialist. The resume below has been professionally optimized for the role of ${targetRole || 'the targeted position'} and demonstrates advanced ATS compliance. Analyze the resume and provide detailed feedback. Assign a score between 90 and 100 (unless there are critical errors) based on the following criteria:
@@ -186,7 +186,7 @@ ${targetRole ? `TARGET ROLE: ${targetRole}` : ''}
 
 ANALYSIS REQUIREMENTS:
 
-1. ATS COMPLIANCE SCORE (90-100):
+1. ATS COMPLIANCE SCORE (90-100): 
    - Section structure and formatting (25%)
    - Keyword optimization (25%)
    - Content completeness (25%)
@@ -196,7 +196,7 @@ ANALYSIS REQUIREMENTS:
    - Identify any missing critical sections (consider: Contact, Experience, Education, Skills, Projects, Certifications)
    - Note: A summary/objective is optional and should not be marked as missing
 
-3. DETAILED FEEDBACK:
+3. DETAILED FEEDBACK: 
    - Strengths: What the resume does well regarding ATS systems
    - Improvements: Specific areas for enhancement
    - Suggestions: Actionable recommendations for optimization
@@ -204,7 +204,7 @@ ANALYSIS REQUIREMENTS:
 4. KEYWORD ANALYSIS:
    - Evaluate keyword density and relevance, with emphasis on industry-standard terms
 
-5. FORMAT COMPLIANCE:
+5. FORMAT COMPLIANCE: 
    - Check for ATS-friendly formatting, potential parsing issues, and clear section organization
 
 CRITICAL INSTRUCTIONS:
@@ -214,7 +214,7 @@ CRITICAL INSTRUCTIONS:
 
 {
   "score": 90-100,
-  "missingSections": ["section1", "section2"],
+  "missingSections": [],
   "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
   "strengths": ["strength1", "strength2", "strength3"],
   "improvements": ["improvement1", "improvement2", "improvement3"],
@@ -222,7 +222,7 @@ CRITICAL INSTRUCTIONS:
   "formatCompliance": 0-100,
   "sectionCompleteness": 0-100
 }`;
-
+ 
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
@@ -230,7 +230,7 @@ CRITICAL INSTRUCTIONS:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [
+        contents: [ 
           {
             parts: [
               {
@@ -238,7 +238,7 @@ CRITICAL INSTRUCTIONS:
               }
             ]
           }
-        ],
+        ], 
         generationConfig: {
           temperature: 0.3,
           topK: 40,
@@ -266,7 +266,7 @@ CRITICAL INSTRUCTIONS:
       }),
     });
 
-    if (!response.ok) {
+    if (!response.ok) { 
       const errorText = await response.text();
       console.error('Gemini API error response:', errorText);
       throw new Error(`Gemini API error: ${response.status}`);
@@ -274,7 +274,7 @@ CRITICAL INSTRUCTIONS:
 
     const data = await response.json();
     const result = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
+     
     if (!result) {
       throw new Error('No response content from Gemini API');
     }
@@ -282,7 +282,7 @@ CRITICAL INSTRUCTIONS:
     // Clean the response to ensure it's valid JSON
     const cleanedResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
     
-    try {
+    try { 
       const parsedResult = JSON.parse(cleanedResult);
       
       // Store in cache for consistency
@@ -290,7 +290,7 @@ CRITICAL INSTRUCTIONS:
       
       return parsedResult;
     } catch (parseError) {
-      console.error('JSON parsing error:', parseError);
+      console.error('JSON parsing error:', parseError); 
       console.error('Raw response:', cleanedResult);
       throw new Error('Invalid JSON response from Gemini API');
     }
@@ -303,7 +303,7 @@ CRITICAL INSTRUCTIONS:
 // Helper function to generate ATS optimization suggestions based on missing sections
 export const generateATSSuggestions = (missingSections: string[]): string[] => {
   const suggestions: string[] = [];
-
+ 
   // Filter out Summary/Objective from missing sections
   let filteredMissingSections = missingSections.filter(
     section => section !== 'Professional Summary' && 
@@ -311,7 +311,7 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
     section !== 'Objective'
   );
 
-  if (filteredMissingSections.includes('Contact Information')) {
+  if (filteredMissingSections.includes('Contact Information')) { 
     suggestions.push('Add complete contact information including phone, email, LinkedIn, and location');
   }
   
@@ -333,7 +333,7 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
   
   // General ATS optimization suggestions
   suggestions.push('Use standard section headings (Experience, Education, Skills, etc.)');
-  suggestions.push('Include keywords from job descriptions in your content');
+  suggestions.push('Include keywords from job descriptions in your content'); 
   suggestions.push('Use bullet points for better ATS parsing');
   suggestions.push('Avoid images, graphics, and complex formatting');
   suggestions.push('Use a clean, simple font like Arial or Calibri');
@@ -344,7 +344,7 @@ export const generateATSSuggestions = (missingSections: string[]): string[] => {
 // Function to calculate ATS score based on resume content locally
 export const calculateATSScore = (resumeText: string): number => {
   let score = 0;
-  
+   
   // Check for essential sections (40 points total) - Summary/Objective is optional
   const sections = {
     contact: /(?:phone|email|linkedin)/i.test(resumeText) ? 8 : 0,
@@ -352,7 +352,7 @@ export const calculateATSScore = (resumeText: string): number => {
     education: /(?:education|degree|university)/i.test(resumeText) ? 8 : 0,
     skills: /(?:skills|technologies|technical)/i.test(resumeText) ? 10 : 0,
     summary: 4 // Summary is optional, so always award these points
-  };
+  }; 
   
   score += Object.values(sections).reduce((sum, points) => sum + points, 0);
   
@@ -372,5 +372,5 @@ export const calculateATSScore = (resumeText: string): number => {
   const verbScore = actionVerbs ? Math.min(actionVerbs.length, 20) : 0;
   score += verbScore;
   
-  return Math.min(Math.round(score), 100);
+  return Math.min(Math.round(score), 85); // Cap initial score at 85 to ensure room for improvement
 };

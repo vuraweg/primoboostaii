@@ -24,8 +24,8 @@ import { ResumePreview } from './ResumePreview';
 import { ExportButtons } from './ExportButtons';
 import { ResumeData, UserType } from '../types/resume';
 import { optimizeResume } from '../services/geminiService';
-import { getMatchScore } from '../services/scoringService';
-import { useAuth } from '../contexts/AuthContext';
+import { getMatchScore, generateBeforeScore, generateAfterScore } from '../services/scoringService';
+import { useAuth } from '../contexts/AuthContext'; 
 import { paymentService } from '../services/paymentService';
 import { analyzeResumeForATS, analyzeOptimizedResumeForATS, calculateATSScore } from '../services/atsAnalysisService';
 
@@ -66,6 +66,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [currentStep, setCurrentStep] = useState<'upload' | 'analyze' | 'inputs' | 'optimize' | 'result'>('upload');
+  const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [initialScore, setInitialScore] = useState<number>(0);
   const [formData, setFormData] = useState({
@@ -100,6 +101,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
       // Analyze resume for ATS compliance and missing sections
       const analysis = await analyzeResumeForATS(resumeText, userInputs.targetRole);
       setAtsAnalysis(analysis);
+      setOriginalScore(analysis.score);
       
       // Store the original score for comparison after optimization (cap at 85% to ensure improvement)
       const cappedScore = Math.min(analysis.score, 85);
@@ -384,12 +386,13 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 <div className="space-y-6">
                   {/* Target Role Input */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2" htmlFor="target-role">
                       Target Role/Position *
                     </label>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                       <input
+                        id="target-role"
                         type="text"
                         value={userInputs.targetRole}
                         onChange={(e) => setUserInputs(prev => ({ ...prev, targetRole: e.target.value }))}
@@ -430,6 +433,9 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 text-center">
                     <div className="text-4xl font-bold text-gray-900 mb-2">{Math.round(atsAnalysis.score)}%</div>
                     <div className="text-lg text-gray-600">ATS Compatibility Score</div>
+                    <div className="mt-4 text-sm text-gray-600">
+                      This is your current score. After optimization, we'll improve it significantly.
+                    </div>
                     {initialScore > 0 && (
                       <div className="text-sm text-gray-500 mt-1">
                         Initial Score: {initialScore}% 
@@ -663,19 +669,25 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       
                       <button 
                         onClick={() => setCurrentStep('inputs')}
-                        className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors ${
+                        className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 ${
                           atsAnalysis.score < 75 ? 'animate-pulse shadow-lg' : ''
                         }`}
                       >
                         {atsAnalysis.score < 75 ? (
-                          <span className="flex items-center">
-                            <Zap className="w-5 h-5 mr-2 flex-shrink-0" />
-                            Optimize Now (Recommended)
-                          </span>
-                        ) : atsAnalysis.score >= 85 ? (
-                          'Continue to Optimization (Optional)'
+                          <>
+                            <Zap className="w-5 h-5 mr-2" />
+                            <span>Optimize Now (Recommended)</span>
+                          </>
+                        ) : atsAnalysis.score >= 90 ? (
+                          <>
+                            <TrendingUp className="w-5 h-5 mr-2" />
+                            <span>Continue to Optimization (Optional)</span>
+                          </>
                         ) : (
-                          'Continue to Optimization'
+                          <>
+                            <TrendingUp className="w-5 h-5 mr-2" />
+                            <span>Continue to Optimization</span>
+                          </>
                         )}
                       </button>
                     </div>
@@ -751,7 +763,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                   <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                     <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
                       <FileText className="w-5 h-5 mr-2" />
-                      Complete Your Resume
+                      Complete Missing Sections to Improve Your Score
                     </h3>
                     <p className="text-blue-700 text-sm mb-4 leading-relaxed">
                       Adding these sections will significantly improve your ATS score and increase your chances of getting interviews.
@@ -760,7 +772,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                     <div className="space-y-4">
                       {/* Work Experience */}
                       {atsAnalysis.missingSections.filter(s => s === 'Work Experience').length > 0 && (
-                        <div>
+                        <div className="bg-white p-4 rounded-lg border border-blue-100">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Work Experience <span className="text-red-500">*</span>
                           </label>
@@ -775,7 +787,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       
                       {/* Education */}
                       {atsAnalysis.missingSections.filter(s => s === 'Education').length > 0 && (
-                        <div>
+                        <div className="bg-white p-4 rounded-lg border border-blue-100">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Education <span className="text-red-500">*</span>
                           </label>
@@ -790,7 +802,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       
                       {/* Skills */}
                       {atsAnalysis.missingSections.filter(s => s === 'Technical Skills').length > 0 && (
-                        <div>
+                        <div className="bg-white p-4 rounded-lg border border-blue-100">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Technical Skills <span className="text-red-500">*</span>
                           </label>
@@ -805,7 +817,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       
                       {/* Certifications */}
                       {atsAnalysis.missingSections.filter(s => s === 'Certifications').length > 0 && (
-                        <div>
+                        <div className="bg-white p-4 rounded-lg border border-blue-100">
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Certifications <span className="text-red-500">*</span>
                           </label>
@@ -820,7 +832,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       
                       {/* Additional Details */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 bg-white p-4 rounded-lg border border-blue-100">
                           Additional Information (Optional)
                           <span className="ml-2 text-xs text-gray-500">Any other information you'd like to include</span>
                         </label>
@@ -831,6 +843,19 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                           className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
                          />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Current Score Display */}
+                {originalScore && (
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-blue-900 flex items-center">
+                        <BarChart3 className="w-5 h-5 mr-2" />
+                        Current ATS Score: {Math.round(originalScore)}%
+                      </h3>
+                      <div className="text-sm text-blue-700">We'll improve this significantly!</div>
                     </div>
                   </div>
                 )}
@@ -872,7 +897,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 <div className="flex justify-center">
                   <button
                     onClick={handleOptimize} 
-                    disabled={!userInputs.targetRole.trim() || isOptimizing || (atsAnalysis?.missingSections.length > 0 && Object.values(formData).every(val => !val.trim()))}
+                    disabled={!userInputs.targetRole.trim() || isOptimizing}
                     className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 shadow-lg hover:shadow-xl"
                   >
                     {isOptimizing ? (
@@ -884,7 +909,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                       atsAnalysis?.missingSections.length > 0 ? (
                         <> 
                           <TrendingUp className="w-5 h-5" />
-                          <span>Build ATS-Optimized Resume</span>
+                          <span>Generate ATS-Optimized Resume</span>
                         </>
                       ) : (
                         <>
@@ -987,7 +1012,7 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 transition-all hover:shadow-xl">
                 <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 border-b">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    Your Optimized Resume
+                    Your ATS-Optimized Resume
                   </h3>
                   <p className="text-gray-600">
                     ATS-friendly format with improved keyword optimization
@@ -996,27 +1021,27 @@ export const ATSResumeBuilder: React.FC<ATSResumeBuilderProps> = ({ onBackToHome
                 <ResumePreview resumeData={optimizedResume} userType={userInputs.userType} />
               </div>
 
-              {/* Export Options */}
-              <ExportButtons resumeData={optimizedResume} />
+                {/* Export Options */}
+                <ExportButtons resumeData={optimizedResume} />
 
-              {/* Start Over */}
-              <div className="text-center mt-8">
-                <button
-                  onClick={() => {
-                    if (onBackToHome) {
-                      resetBuilder();
-                    } else {
-                      resetBuilder();
-                    }
-                  }}
-                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto shadow-md hover:shadow-lg"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  <span>Build Another Resume</span>
-                </button>
+                {/* Start Over */}
+                <div className="text-center mt-8">
+                  <button
+                    onClick={() => {
+                      if (onBackToHome) {
+                        resetBuilder();
+                      } else {
+                        resetBuilder();
+                      }
+                    }}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center space-x-2 mx-auto shadow-md hover:shadow-lg"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Build Another Resume</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
     </div>
